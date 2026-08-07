@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>水脉 WaterPulse · 上游原材料水风险 Agent</title>
+  <style>
+    :root {
+      --nav: #0b3032;
+      --nav-2: #143f42;
+      --ink: #102a2b;
+      --muted: #6f7f83;
+      --line: #dfe8e5;
+      --wash: #f7faf8;
+      --panel: #fff;
+      --teal: #0b8f84;
+      --aqua: #6dd6cc;
+      --green: #2f9a67;
+      --amber: #d58b21;
+      --red: #c44937;
+      --green-soft: #e7f6ec;
+      --amber-soft: #fff0d6;
+      --red-soft: #fee8e3;
+      --shadow: 0 12px 30px rgba(16, 42, 43, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--wash);
+      color: var(--ink);
+      font-family: Inter, "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 288px 1fr;
+    }
+
+    aside {
+      background: var(--nav);
+      color: #c9ddda;
+      padding: 32px 22px;
+      min-height: 100vh;
+      position: sticky;
+      top: 0;
+      align-self: start;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .drop {
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--aqua);
+      border-radius: 50% 50% 50% 8px;
+      transform: rotate(-45deg);
+      flex: 0 0 auto;
+    }
+
+    .brand {
+      color: #fff;
+      font-size: 20px;
+      line-height: 1.05;
+      font-weight: 850;
+    }
+
+    .brand-sub {
+      color: #7eb2af;
+      font-size: 11px;
+      font-weight: 780;
+      letter-spacing: 1.6px;
+      line-height: 1.25;
+      margin-top: 3px;
+    }
+
+    .project {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 16px 17px;
+      margin-bottom: 30px;
+    }
+
+    .label {
+      color: #76aaa6;
+      font-size: 12px;
+      font-weight: 760;
+      margin-bottom: 7px;
+    }
+
+    .project strong {
+      display: block;
+      color: #fff;
+      font-size: 17px;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .project span {
+      color: #93bab6;
+      font-size: 12px;
+    }
+
+    .nav-title {
+      color: #6ea09d;
+      font-size: 12px;
+      font-weight: 780;
+      margin: 20px 0 9px;
+    }
+
+    .nav-item {
+      display: grid;
+      grid-template-columns: 24px 22px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 11px 13px;
+      border-radius: 8px;
+      color: #c7dbd7;
+      font-weight: 720;
+      margin: 4px 0;
+    }
+
+    .nav-item.active {
+      background: rgba(255,255,255,0.10);
+      color: #fff;
+      box-shadow: inset 4px 0 0 var(--aqua);
+    }
+
+    .nav-muted { color: #82b6b2; text-align: center; }
+
+    .side-foot {
+      border-top: 1px solid rgba(255,255,255,0.09);
+      margin-top: 36px;
+      padding-top: 18px;
+      color: #95bbb7;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    main {
+      padding: 24px 34px 56px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+      margin-bottom: 26px;
+      gap: 16px;
+    }
+
+    .crumb {
+      color: #8b9a9e;
+      font-weight: 720;
+      font-size: 14px;
+    }
+
+    .crumb strong { color: var(--ink); }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #516569;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 760;
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #35a56e; }
+
+    .kicker {
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 840;
+      margin-bottom: 9px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 3.3vw, 48px);
+      line-height: 1.12;
+      margin: 0 0 14px;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      color: #5f7175;
+      line-height: 1.7;
+      max-width: 920px;
+      margin-bottom: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      padding: 0 0 12px;
+      color: var(--ink);
+      font-weight: 820;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .overview {
+      grid-template-columns: 2.5fr 1fr;
+    }
+
+    .metrics {
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      margin-top: 18px;
+    }
+
+    .two {
+      grid-template-columns: 2fr 1fr;
+      margin-top: 18px;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 21px 23px;
+    }
+
+    .panel-tight {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 17px 19px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 18px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .strong { font-size: 16px; font-weight: 850; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      margin: 3px 4px 3px 0;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .green { background: var(--green-soft); color: #277a4d; }
+    .amber { background: var(--amber-soft); color: #9a5c10; }
+    .red { background: var(--red-soft); color: var(--red); }
+    .gray { background: #edf2f1; color: #607175; }
+
+    .metric {
+      position: relative;
+      min-height: 134px;
+      overflow: hidden;
+      padding-left: 30px;
+    }
+
+    .metric::before {
+      content: "";
+      position: absolute;
+      top: 24px;
+      bottom: 24px;
+      left: 14px;
+      width: 8px;
+      border-radius: 999px;
+      background: var(--teal);
+    }
+
+    .metric.amberbar::before { background: var(--amber); }
+    .metric.redbar::before { background: var(--red); }
+    .metric.greenbar::before { background: var(--green); }
+
+    .metric-label {
+      color: #66787c;
+      font-size: 13px;
+      font-weight: 820;
+      margin-bottom: 7px;
+    }
+
+    .metric-value {
+      font-size: 38px;
+      font-weight: 880;
+      line-height: 1.05;
+    }
+
+    .metric-value small {
+      color: #9aa9ad;
+      font-size: 16px;
+      font-weight: 740;
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(72px, 1fr));
+      gap: 8px;
+      margin: 22px 0 18px;
+      text-align: center;
+    }
+
+    .step { color: #8a989d; font-size: 12px; font-weight: 760; }
+    .bubble {
+      display: inline-flex;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      align-items: center;
+      justify-content: center;
+      background: #f0f5f3;
+      border: 2px solid #d8e3df;
+      color: #789097;
+      margin-bottom: 8px;
+      font-weight: 850;
+    }
+    .step.done .bubble { background: var(--teal); color: #fff; border-color: var(--teal); }
+    .step.active .bubble { background: #fff; color: var(--teal); border-color: var(--teal); }
+
+    .bars {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      align-items: end;
+      gap: 18px;
+      min-height: 280px;
+      padding: 18px 18px 8px;
+      border-top: 1px solid #edf2f0;
+      margin-top: 14px;
+    }
+
+    .bar-wrap { text-align: center; }
+    .bar {
+      width: 54px;
+      margin: 0 auto 10px;
+      border-radius: 6px 6px 2px 2px;
+      background: var(--teal);
+      position: relative;
+    }
+    .bar span {
+      position: absolute;
+      top: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 780;
+      color: #53666a;
+    }
+    .bar.redbar { background: var(--red); }
+    .bar.amberbar { background: var(--amber); }
+    .bar.greenbar { background: #3d9a67; }
+
+    .list {
+      display: grid;
+      gap: 13px;
+    }
+    .list-item {
+      display: grid;
+      grid-template-columns: 10px 1fr;
+      gap: 12px;
+      border-bottom: 1px solid #edf2f0;
+      padding-bottom: 13px;
+    }
+    .list-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .bullet {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      margin-top: 7px;
+      background: var(--teal);
+    }
+    .bullet.amber { background: var(--amber); }
+    .bullet.red { background: var(--red); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 13px 10px;
+      border-bottom: 1px solid #edf2f0;
+      vertical-align: top;
+    }
+    th {
+      color: #758589;
+      font-weight: 820;
+      background: #fbfdfc;
+    }
+    td.num { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 760; color: #234448; }
+
+    .agent-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .chat {
+      display: grid;
+      gap: 14px;
+    }
+    .msg {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      max-width: 82%;
+      line-height: 1.7;
+    }
+    .msg.user {
+      margin-left: auto;
+      background: var(--nav);
+      color: #fff;
+      border-color: var(--nav);
+    }
+    .msg.agent { background: #fff; }
+    .tool {
+      display: inline-flex;
+      margin: 4px 0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: var(--teal);
+      background: var(--teal-soft, #e3f4f1);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    footer {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: #77898d;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1000px) {
+      .app { grid-template-columns: 1fr; }
+      aside { position: relative; min-height: auto; }
+      main { padding: 22px 18px 42px; }
+      .overview, .two, .agent-grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .mini-grid { grid-template-columns: repeat(2, 1fr); }
+      .progress { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="logo">
+        <div class="drop"></div>
+        <div>
+          <div class="brand">水脉 WaterPulse</div>
+          <div class="brand-sub">UPSTREAM WATER RISK<br>AGENT</div>
+        </div>
+      </div>
+
+      <div class="project">
+        <div class="label">当前项目</div>
+        <strong>甲公司 · 植物基蛋白原料</strong>
+        <span>C14 食品制造业 · 2026 评估年度</span>
+      </div>
+
+      <div class="nav-title">分析流程</div>
+      <div class="nav-item active"><span class="nav-muted">⌂</span><span class="nav-muted">0</span><span>首页总览</span></div>
+      <div class="nav-item"><span class="nav-muted">↥</span><span class="nav-muted">1</span><span>数据导入</span></div>
+      <div class="nav-item"><span class="nav-muted">◉</span><span class="nav-muted">2</span><span>数据资源库</span></div>
+      <div class="nav-item"><span class="nav-muted">▱</span><span class="nav-muted">3</span><span>供应链地图</span></div>
+      <div class="nav-item"><span class="nav-muted">◌</span><span class="nav-muted">4</span><span>风险敞口</span></div>
+      <div class="nav-item"><span class="nav-muted">☁</span><span class="nav-muted">5</span><span>压力测试</span></div>
+      <div class="nav-item"><span class="nav-muted">☷</span><span class="nav-muted">6</span><span>Agent 分析</span></div>
+      <div class="nav-item"><span class="nav-muted">▤</span><span class="nav-muted">7</span><span>报告导出</span></div>
+
+      <div class="nav-title">系统</div>
+      <div class="nav-item"><span class="nav-muted">⚙</span><span class="nav-muted">·</span><span>设置 / 审计日志</span></div>
+
+      <div class="side-foot">
+        ● 本地资料库已连接 · L2 服务层<br>
+        <strong style="color:#fff;">D 组 · MVP 负责</strong><br>
+        永久静态预览 · 交互版见 Streamlit Cloud
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">
+        <div class="crumb">水脉 WaterPulse&nbsp;&nbsp;/&nbsp;&nbsp;<strong>首页总览</strong></div>
+        <div class="actions">
+          <span class="chip"><span class="dot"></span>本地资料库已连接</span>
+          <span class="chip">规则降级模式可切换</span>
+        </div>
+      </div>
+
+      <div class="kicker">项目总览 · PHASE 1 MVP</div>
+      <h1>甲公司上游原材料水风险总览</h1>
+      <p class="lead">植物基蛋白核心原料的采购组合水风险入口。数据来自公开披露与本地样本库匹配结果，工作假设字段将在报告中如实说明，不作为企业真实结论。</p>
+
+      <div class="tabs">
+        <div class="tab active">总览</div>
+        <div class="tab">按原材料</div>
+        <div class="tab">按产地</div>
+      </div>
+
+      <section class="grid overview">
+        <div class="panel">
+          <div class="mini-grid">
+            <div><div class="muted">行业分类</div><div class="strong">C14 食品制造业</div></div>
+            <div><div class="muted">关键原材料</div><div class="strong">大豆 / 甘蔗 / 甜菜等</div></div>
+            <div><div class="muted">评估年度</div><div class="strong">2026</div></div>
+            <div><div class="muted">供应节点数</div><div class="strong">10 个</div></div>
+          </div>
+          <div style="margin-top:16px;">
+            <span class="badge green">数据性质：公开披露 5</span>
+            <span class="badge amber">工作假设 4</span>
+            <span class="badge gray">模拟 1</span>
+            <span class="badge green">位置匹配 100%</span>
+            <span class="badge amber">数据质量 A</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="muted">状态标识图例</div>
+          <span class="badge green">已确定</span>
+          <span class="badge amber">工作假设</span>
+          <span class="badge red">待验证</span>
+          <span class="badge gray">暂不纳入</span>
+        </div>
+      </section>
+
+      <section class="grid metrics">
+        <div class="panel metric amberbar">
+          <div class="metric-label">采购加权水风险敞口 Ek</div>
+          <div class="metric-value">0.32<small> / 1.0</small></div>
+          <div class="muted">Σ wi × ri,k · 置信 中</div>
+        </div>
+        <div class="panel metric redbar">
+          <div class="metric-label">高风险采购占比 Ph</div>
+          <div class="metric-value">52<small>%</small></div>
+          <div class="muted">阈值 r ≥ 0.4 · 4 节点</div>
+        </div>
+        <div class="panel metric greenbar">
+          <div class="metric-label">采购集中度 HHI</div>
+          <div class="metric-value">0.16</div>
+          <div class="muted">按供应节点权重估计</div>
+        </div>
+        <div class="panel metric redbar">
+          <div class="metric-label">Top 3 节点贡献占比</div>
+          <div class="metric-value">66<small>%</small></div>
+          <div class="muted">用于定位优先调查对象</div>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <div class="panel">
+          <strong>分析流程 · 端到端进度</strong>
+          <div class="muted">每一步均可回看输入、公式版本与运行时间。</div>
+          <div class="progress">
+            <div class="step done"><div class="bubble">✓</div><div>数据导入</div><div>已完成</div></div>
+            <div class="step done"><div class="bubble">✓</div><div>数据校验</div><div>已完成</div></div>
+            <div class="step done"><div class="bubble">✓</div><div>位置匹配</div><div>已完成</div></div>
+            <div class="step done"><div class="bubble">✓</div><div>敞口计算</div><div>已完成</div></div>
+            <div class="step active"><div class="bubble">5</div><div>压力测试</div><div>进行中</div></div>
+            <div class="step"><div class="bubble">6</div><div>Agent 解释</div><div>未开始</div></div>
+            <div class="step"><div class="bubble">7</div><div>报告导出</div><div>未开始</div></div>
+          </div>
+
+          <strong>按原材料产区分解敞口</strong>
+          <div class="bars">
+            <div class="bar-wrap"><div class="bar redbar" style="height:185px"><span>12.1%</span></div><div class="muted">甜菜</div></div>
+            <div class="bar-wrap"><div class="bar amberbar" style="height:97px"><span>6.4%</span></div><div class="muted">大豆</div></div>
+            <div class="bar-wrap"><div class="bar amberbar" style="height:62px"><span>4.0%</span></div><div class="muted">茶叶</div></div>
+            <div class="bar-wrap"><div class="bar greenbar" style="height:58px"><span>3.7%</span></div><div class="muted">甘蔗</div></div>
+            <div class="bar-wrap"><div class="bar amberbar" style="height:53px"><span>3.5%</span></div><div class="muted">番茄</div></div>
+            <div class="bar-wrap"><div class="bar greenbar" style="height:22px"><span>1.1%</span></div><div class="muted">玉米</div></div>
+            <div class="bar-wrap"><div class="bar greenbar" style="height:15px"><span>0.7%</span></div><div class="muted">原奶</div></div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="panel-tight">
+            <strong>数据质量提示</strong>
+            <div class="list" style="margin-top:14px;">
+              <div class="list-item"><span class="bullet amber"></span><div><strong>采购权重合计已归一化</strong><div class="muted">当前权重和 100%，系统按统一口径计算敞口。</div></div></div>
+              <div class="list-item"><span class="bullet"></span><div><strong>公开披露与工作假设分层标记</strong><div class="muted">样例数据中区分真实披露、工作假设和模拟数据，报告会保留来源说明。</div></div></div>
+              <div class="list-item"><span class="bullet"></span><div><strong>ABC 组信息保留替换空间</strong><div class="muted">行业范围、数据链路、压力情景参数确认后集中替换。</div></div></div>
+            </div>
+          </div>
+          <div class="panel-tight">
+            <strong>快速入口</strong>
+            <p class="muted">加载统一 10 节点演示样本<br>查看敞口复核表<br>向 Agent 提问本项目结果</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:18px;">
+        <strong>节点贡献复核表</strong>
+        <p class="muted">表内数值来自当前样例数据与确定性计算函数，不由 Agent 自行生成。</p>
+        <table>
+          <thead>
+            <tr><th>节点</th><th>原材料</th><th>供应商 / 产地</th><th>采购权重</th><th>风险分数</th><th>贡献</th><th>数据性质</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>S002</td><td>甜菜</td><td>新疆甜菜供应商 · 中国新疆</td><td class="num">0.293</td><td class="num">0.413</td><td class="num">0.121</td><td><span class="badge green">真实披露</span></td></tr>
+            <tr><td>S003</td><td>大豆</td><td>爱荷华大豆供应商 · 美国爱荷华</td><td class="num">0.149</td><td class="num">0.312</td><td class="num">0.046</td><td><span class="badge green">真实披露</span></td></tr>
+            <tr><td>S008</td><td>茶叶</td><td>云南茶叶供应商 · 中国云南</td><td class="num">0.088</td><td class="num">0.458</td><td class="num">0.040</td><td><span class="badge amber">工作假设</span></td></tr>
+            <tr><td>S005</td><td>番茄</td><td>山东番茄供应商 · 中国山东</td><td class="num">0.085</td><td class="num">0.408</td><td class="num">0.035</td><td><span class="badge amber">工作假设</span></td></tr>
+            <tr><td>S010</td><td>甘蔗</td><td>广西甘蔗供应商 · 中国广西</td><td class="num">0.053</td><td class="num">0.447</td><td class="num">0.024</td><td><span class="badge green">真实披露</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="agent-grid">
+        <div class="panel">
+          <strong>Agent 分析演示</strong>
+          <p class="muted">Agent 负责理解问题、追问缺失信息、调用工具与解释结果；风险数值由确定性模块产生。</p>
+          <div class="chat">
+            <div class="msg user">帮我看看甲公司的大豆供应链有没有水风险问题。</div>
+            <div class="msg agent">甲公司的大豆采购是否有明确的产区或供应商清单？如果没有，我会先用企业公开披露信息做初步匹配，结果会标注为工作假设。</div>
+            <div class="msg user">没有内部清单，先用公开信息。</div>
+            <div><span class="tool">✓ 调用 query_data_library → match_water_risk</span></div>
+            <div class="msg agent">已匹配到样例采购节点与水风险指标。本轮加权敞口 Ek 为 0.32，高风险采购占比为 52%。其中 S002、S005、S008、S010 被识别为高风险节点。以上为研究原型结果，待 ABC 组最终数据口径确认后替换。</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="panel-tight">
+            <strong>管理建议（草稿）</strong>
+            <div class="list" style="margin-top:14px;">
+              <div class="list-item"><span class="bullet red"></span><div><strong>关注高贡献节点</strong><div class="muted">优先复核 S002、S008、S005、S010 的产地与权重口径。</div></div></div>
+              <div class="list-item"><span class="bullet amber"></span><div><strong>补全采购权重披露</strong><div class="muted">对工作假设节点补充真实采购金额或数量口径。</div></div></div>
+              <div class="list-item"><span class="bullet"></span><div><strong>进入压力测试</strong><div class="muted">用 C 组情景参数重算 2030/2050 与关键节点中断影响。</div></div></div>
+            </div>
+          </div>
+          <div class="panel-tight">
+            <strong>引用与证据</strong>
+            <p>
+              <span class="badge gray">Aqueduct 4.0</span>
+              <span class="badge gray">AQUASTAT</span>
+              <span class="badge gray">TNFD LEAP</span>
+              <span class="badge gray">项目样例数据 v1</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        水脉 WaterPulse · 水风险管理 AI Agent MVP v0.2 · D 组。本文为永久静态预览，用于远程查看网页设计与核心内容；完整交互版使用 Streamlit Cloud 部署。
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
