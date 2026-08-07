@@ -3,7 +3,6 @@
     "name": "水风险管理 AI Agent",
     "subtitle": "面向科技农食企业供应链的轻量级水风险评估平台",
     "version": "MVP v0.2 初步设计版",
-    "owner": "D 组",
     "last_updated": "2026-08-07",
     "design_goal": "先完成可演示网站外壳、视觉风格与核心流程；ABC 组未定信息以可替换模块保留。"
   },

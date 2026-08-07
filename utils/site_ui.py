@@ -801,7 +801,6 @@ def render_hero() -> None:
             <p class="wr-subtitle">{escape(project["subtitle"])}。{escape(project["design_goal"])}</p>
             <div class="wr-pill-row">
                 <span class="wr-pill">{escape(project["version"])}</span>
-                <span class="wr-pill">负责人：{escape(project["owner"])}</span>
                 <span class="wr-pill">更新：{escape(project["last_updated"])}</span>
                 <span class="wr-pill">ABC 组信息可替换</span>
             </div>
