@@ -10,19 +10,22 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import calculations
+from utils import calculations, site_ui
 
 st.set_page_config(page_title="供应链地图", page_icon="🗺️", layout="wide")
 
-st.title("🗺️ 供应链地图")
-st.markdown("### 可视化原材料产地的空间分布与水风险")
+site_ui.apply_global_styles()
+site_ui.render_sidebar("供应链地图")
+site_ui.render_topbar("供应链地图", "匹配层级：坐标 / 省级 / 国家级")
+site_ui.render_page_header(
+    "供应链地图与位置匹配",
+    "将供应节点表格转为空间视图：节点连线至匹配流域，点的大小表示采购权重，颜色表示节点所在地区水风险等级。当前以示例坐标和国家级风险兜底演示。",
+    "工作流 · 第 3 步 / 共 7 步"
+)
+site_ui.render_editable_notice("位置、行政区、流域匹配链路确定后，可替换地图节点字段和风险图层。")
 
 # ===== 风险通知栏 =====
-if st.session_state.get('result'):
-    alerts = calculations.get_risk_alerts(st.session_state['result'])
-    for alert in alerts:
-        color_map = {"red": "🔴", "orange": "🟠", "yellow": "🟡"}
-        st.warning(f"{color_map.get(alert['color'], '⚠️')} {alert['text']} | {alert['action']}")
+site_ui.render_risk_alerts(st.session_state.get('result'))
 
 st.markdown("---")
 
@@ -58,6 +61,10 @@ if selected_material != '全部':
     df_filtered = df_filtered[df_filtered['原材料'] == selected_material]
 if selected_country != '全部':
     df_filtered = df_filtered[df_filtered['国家'] == selected_country]
+
+if df_filtered.empty:
+    st.warning("当前筛选条件下没有节点，请调整原材料或国家筛选。")
+    st.stop()
 
 st.markdown("---")
 
@@ -240,3 +247,6 @@ with col2:
 
 with col3:
     st.markdown("**下一步**: 前往 **📊 风险敞口** 页面查看量化指标")
+
+
+site_ui.render_footer()

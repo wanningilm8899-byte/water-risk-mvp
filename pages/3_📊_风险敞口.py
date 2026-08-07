@@ -10,19 +10,22 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import calculations
+from utils import calculations, site_ui
 
 st.set_page_config(page_title="风险敞口", page_icon="📊", layout="wide")
 
-st.title("📊 风险敞口")
-st.markdown("### 计算采购加权水风险敞口与集中度指标")
+site_ui.apply_global_styles()
+site_ui.render_sidebar("风险敞口")
+site_ui.render_topbar("风险敞口", "公式 v0.3 · 2026-08-07 运行")
+site_ui.render_page_header(
+    "风险敞口",
+    "采购加权水风险敞口按公式 E_k = Σ_i(w_i × r_i,k) 计算，w_i 为节点采购权重，r_i,k 为该节点所在地经统一量纲处理的风险指标值。标 * 的数值为权重缺失时的等权重估计。",
+    "工作流 · 第 4 步 / 共 7 步"
+)
+site_ui.render_editable_notice("B 组最终公式和风险阈值确认后，优先更新 utils/calculations.py。")
 
 # ===== 风险通知栏 =====
-if st.session_state.get('result'):
-    alerts = calculations.get_risk_alerts(st.session_state['result'])
-    for alert in alerts:
-        color_map = {"red": "🔴", "orange": "🟠", "yellow": "🟡"}
-        st.warning(f"{color_map.get(alert['color'], '⚠️')} {alert['text']}")
+site_ui.render_risk_alerts(st.session_state.get('result'))
 
 st.markdown("---")
 
@@ -68,41 +71,19 @@ st.subheader("📈 核心指标")
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    st.metric(
-        "加权水风险敞口",
-        f"{result['E_k']:.3f}",
-        help="Eₖ = Σ(采购权重 × 风险分数)"
-    )
+    site_ui.render_metric_card("Ek 采购加权敞口", f"{result['E_k']:.2f}<small>/1.0</small>", "Σ 贡献 = 权重 × 风险", "amber")
 
 with col2:
-    st.metric(
-        "高风险采购占比",
-        f"{result['P_h']*100:.1f}%",
-        delta=f"{result['n_high_risk']} 个节点",
-        help=f"风险 ≥ {result['high_risk_threshold']} 的节点采购占比"
-    )
+    site_ui.render_metric_card("高风险采购占比 Ph", f"{result['P_h']*100:.0f}<small>%</small>", f"风险 ≥ {result['high_risk_threshold']}", "red")
 
 with col3:
-    st.metric(
-        "HHI 集中度",
-        f"{result['HHI']:.3f}",
-        delta="⚠️ 高" if result['HHI'] > 0.25 else "✓ 正常",
-        help="HHI = Σ(权重²), >0.25 表示高集中度"
-    )
+    site_ui.render_metric_card("采购集中度 HHI", f"{result['HHI']:.2f}", "Σwi² · 置信 高" if result['HHI'] <= 0.25 else "单点依赖需关注", "green")
 
 with col4:
-    st.metric(
-        "前3大贡献占比",
-        f"{result['top3_contrib']*100:.1f}%",
-        help="前3大节点贡献之和"
-    )
+    site_ui.render_metric_card("Top 3 贡献占比", f"{result['top3_contrib']*100:.0f}<small>%</small>", "关键贡献节点排序", "red")
 
 with col5:
-    st.metric(
-        "节点总数",
-        f"{result['n_nodes']}",
-        help="总采购节点数"
-    )
+    site_ui.render_metric_card("节点总数", f"{result['n_nodes']}", "统一样本当前规模", "")
 
 st.markdown("---")
 
@@ -284,3 +265,6 @@ with st.expander("🔍 独立复算 - 逐行核对(可选)"):
     st.write(f"- Eₖ = {calc_df['贡献'].sum():.4f}")
     st.write(f"- HHI = {calc_df['权重²'].sum():.4f}")
     st.write(f"- 与卡片显示一致 ✓")
+
+
+site_ui.render_footer()

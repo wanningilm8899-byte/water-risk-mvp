@@ -9,12 +9,19 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import calculations
+from utils import calculations, site_ui
 
 st.set_page_config(page_title="压力测试", page_icon="🔮", layout="wide")
 
-st.title("🔮 压力测试")
-st.markdown("### 模拟未来气候变化与供应商中断的影响")
+site_ui.apply_global_styles()
+site_ui.render_sidebar("压力测试")
+site_ui.render_topbar("压力测试", "C 组情景参数待确认")
+site_ui.render_page_header(
+    "压力测试",
+    "在基准组合上施加未来水风险、极端干旱或供应商中断参数并重新计算。输出用于情景比较，不是未来预测或精确损失估计。",
+    "工作流 · 第 5 步 / 共 7 步"
+)
+site_ui.render_editable_notice("C 组最终情景、参数范围和业务解释确定后，可替换本页默认参数。")
 
 st.markdown("---")
 
@@ -363,3 +370,6 @@ with col2:
 
 with col3:
     st.markdown("**下一步**: 前往 **🤖 Agent 报告** 页面生成完整简报")
+
+
+site_ui.render_footer()

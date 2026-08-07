@@ -80,7 +80,7 @@ echo 2. 用 GitHub 登录
 echo 3. 点击 "New app"
 echo 4. 选择仓库: %GITHUB_USER%/water-risk-mvp
 echo 5. Branch: main
-echo 6. Main file: 首页.py
+echo 6. Main file: app.py
 echo 7. 点击 Deploy!
 echo.
 echo 等待 2-3 分钟后,你会得到一个远程链接!

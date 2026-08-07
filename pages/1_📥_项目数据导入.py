@@ -9,24 +9,43 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils import data_api, calculations
+from utils import data_api, calculations, site_ui
 
 st.set_page_config(page_title="数据导入", page_icon="📥", layout="wide")
 
-st.title("📥 项目/数据导入")
-st.markdown("### 第一步: 加载并校验采购清单数据")
+site_ui.apply_global_styles()
+site_ui.render_sidebar("数据导入")
+site_ui.render_topbar("数据导入", "CSV 模板可下载")
+site_ui.render_page_header(
+    "项目/数据导入",
+    "选择行业与关键原材料，导入供应节点数据。系统会检查必填字段、坐标范围与采购权重合计，并将无法精确匹配的字段标记为工作假设。",
+    "工作流 · 第 1 步 / 共 7 步"
+)
+site_ui.render_editable_notice("B 组最终字段、来源说明和校验规则确定后，可替换这里的数据模板。")
 
 # ===== 风险通知栏 =====
-if st.session_state.get('result'):
-    alerts = calculations.get_risk_alerts(st.session_state['result'])
-    for alert in alerts:
-        color_map = {"red": "🔴", "orange": "🟠", "yellow": "🟡"}
-        st.warning(f"{color_map.get(alert['color'], '⚠️')} {alert['text']} | {alert['action']}")
+site_ui.render_risk_alerts(st.session_state.get('result'))
 
 st.markdown("---")
 
 # ===== 数据源选择 =====
-st.subheader("1️⃣ 选择数据源")
+st.subheader("1 · 行业与原材料")
+
+industry_cols = st.columns([1, 1, 1, 1])
+with industry_cols[0]:
+    st.markdown('<span class="wp-badge gray">C13 农副食品加工业</span>', unsafe_allow_html=True)
+with industry_cols[1]:
+    st.markdown('<span class="wp-badge green">C14 食品制造业</span>', unsafe_allow_html=True)
+with industry_cols[2]:
+    st.markdown('<span class="wp-badge gray">C15 酒 / 饮料 / 精制茶制造业</span>', unsafe_allow_html=True)
+with industry_cols[3]:
+    st.markdown('<span class="wp-badge amber">待 A 组细化</span>', unsafe_allow_html=True)
+
+st.markdown("**关键原材料（与行业联动）**")
+site_ui.render_badges(["甘蔗", "大豆", "玉米", "番茄", "原奶", "棕榈", "茶叶"], "green")
+
+st.markdown("---")
+st.subheader("2 · 导入方式")
 
 col1, col2, col3 = st.columns(3)
 
@@ -268,3 +287,6 @@ if df is not None:
 
 else:
     st.info("👆 请先选择数据源并加载数据")
+
+
+site_ui.render_footer()
