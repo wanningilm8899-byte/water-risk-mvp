@@ -1,111 +1,891 @@
 const NAV = [
   ["0", "⌂", "首页总览", "index.html", "home"],
-  ["1", "↥", "数据导入", "data-import.html", "import"],
-  ["2", "◉", "数据资源库", "data-library.html", "library"],
+  ["1", "↥", "企业数据导入", "data-import.html", "import"],
+  ["2", "◉", "行业风险画像", "data-library.html", "library"],
   ["3", "▱", "供应链地图", "supply-map.html", "map"],
-  ["4", "◌", "风险敞口", "risk-exposure.html", "risk"],
+  ["4", "◌", "风险节点排名", "risk-exposure.html", "risk"],
   ["5", "☁", "压力测试", "stress-test.html", "stress"],
-  ["6", "☷", "Agent 分析", "agent-analysis.html", "agent"],
-  ["7", "▤", "报告导出", "report-export.html", "report"]
+  ["6", "☷", "AI 诊断", "agent-analysis.html", "agent"],
+  ["7", "▤", "结果下载", "report-export.html", "report"]
 ];
 
-const NODES = [
-  ["S002", "甜菜", "新疆甜菜供应商", "中国新疆", 0.293, 0.413, "高风险", "公开披露"],
-  ["S003", "大豆", "爱荷华大豆供应商", "美国爱荷华", 0.149, 0.312, "低风险", "公开披露"],
-  ["S008", "茶叶", "云南茶叶供应商", "中国云南", 0.088, 0.458, "高风险", "工作假设"],
-  ["S005", "番茄", "山东番茄供应商", "中国山东", 0.085, 0.408, "高风险", "工作假设"],
-  ["S010", "甘蔗", "广西甘蔗供应商", "中国广西", 0.053, 0.447, "高风险", "公开披露"],
-  ["S001", "大豆", "巴西大豆供应商", "巴西马托格罗索", 0.067, 0.363, "中风险", "公开披露"],
-  ["S004", "甘蔗", "云南甘蔗供应商", "中国云南", 0.050, 0.198, "低风险", "公开披露"]
-];
-
-const META = {
-  home: ["项目总览 · PHASE 1 MVP", "甲公司上游原材料水风险总览", "植物基蛋白核心原料的采购组合水风险入口。数据来自公开披露与本地样本库匹配结果，工作假设字段将在报告中如实说明，不作为企业真实结论。"],
-  import: ["工作流 · 第 1 步 / 共 7 步", "项目 / 数据导入", "选择行业与关键原材料，导入供应节点数据。系统会检查必填字段、坐标范围与采购权重合计，并将无法精确匹配的字段标记为工作假设。"],
-  library: ["工作流 · 第 2 步 / 共 7 步", "数据资源库", "集中管理公开披露、AQUASTAT、Aqueduct 与本地样本库的数据来源，保留字段映射和证据链，便于后续替换 ABC 组最终口径。"],
-  map: ["工作流 · 第 3 步 / 共 7 步", "供应链地图与位置匹配", "将供应节点表格转为空间视图：节点连接至匹配流域，点的大小表示采购权重，颜色表示节点所在地区水风险等级。"],
-  risk: ["工作流 · 第 4 步 / 共 7 步", "风险敞口", "采购加权水风险敞口按公式 Ek = Σ(wi × ri,k) 计算。标星数值为权重缺失时的等权重估计，所有结果保留数据性质标记。"],
-  stress: ["工作流 · 第 5 步 / 共 7 步", "压力测试", "用 C 组待确认的情景参数重算未来水压力上升、供应中断比例与关键节点敏感性，展示结构先完成，参数可集中替换。"],
-  agent: ["工作流 · 第 6 步 / 共 7 步", "Agent 分析与管理建议", "Agent 负责理解问题、追问缺失字段、调用确定性工具与解释结果；不编造分数、供应商信息或计算结果。"],
-  report: ["工作流 · 第 7 步 / 共 7 步", "报告导出", "把首页指标、数据来源、公式版本、压力情景和 Agent 建议汇总为可交付报告。未确定内容以占位字段保留，后续可替换。"]
+const INDUSTRY_CATALOG = {
+  sugar_sugarcane: {
+    industryId: "sugar",
+    materialId: "sugarcane",
+    status: "active",
+    title: "制糖业 - 甘蔗",
+    enterprise: "中粮糖业",
+    subtitle: "上游甘蔗与进口原糖供应链水风险筛查",
+    assessmentDate: "2026-08-18",
+    sourceVersion: "ABC组8.17 v2.0",
+    method: "SWEi = Ei × Wi × Ri",
+    requiredFields: ["节点编号", "产区/供应商", "精确位置", "采购比例(E)", "水足迹W", "BWS系数R", "置信度"],
+    mechanisms: [
+      {
+        indicator: "长期干旱与旱季供水下降",
+        why: "甘蔗生长期较长，对稳定供水和土壤墒情敏感。",
+        consequence: "供水不足会影响单产、含糖量和压榨期原料稳定性。",
+        measures: ["核实灌溉水源与旱季取水许可", "建立低风险备选产区", "对高贡献节点设置采购上限或替代采购预案"]
+      },
+      {
+        indicator: "基准水压力",
+        why: "BWS 系数用于反映区域用水竞争和可用水资源压力。",
+        consequence: "水压力较高的产区在扩产、采购放量或旱季冲击下更容易形成供应约束。",
+        measures: ["优先复核高 R 值节点", "与供应商共同开展节水灌溉和用水效率改造", "对数据置信度较低节点补充坐标级 Aqueduct 查询"]
+      },
+      {
+        indicator: "季节波动与洪涝",
+        why: "甘蔗产区同时可能面临旱季缺水和汛期洪涝，对田间管理和物流造成扰动。",
+        consequence: "极端波动会影响收割窗口、运输连续性和工厂开榨节奏。",
+        measures: ["建立收割期天气与水文监测", "准备跨区域调拨机制", "把洪涝与干旱风险分别列入供应商审查清单"]
+      },
+      {
+        indicator: "采购集中与单点失效",
+        why: "高采购占比节点即使区域 R 值不高，也会因企业暴露量大而成为管理优先级节点。",
+        consequence: "核心节点失效时，总 SWE 可能下降，但供应缺口和替代依赖会显著上升。",
+        measures: ["识别前 3 个贡献节点并设定管理责任人", "为第一贡献节点建立替代来源池", "跟踪剩余供应链风险是否向第二节点集中"]
+      }
+    ],
+    nodes: [
+      {
+        id: "N01",
+        material: "甘蔗",
+        supplier: "中粮糖业-广西蔗区",
+        area: "广西崇左/江州/北海",
+        preciseLocation: "广西崇左市/江州区/北海市",
+        purchaseShare: 0.0844432546052039,
+        production: 7223.2,
+        productionYear: "2023",
+        waterFootprint: 540000000,
+        riskR: 0.15,
+        regionRisk: "低",
+        confidence: "中",
+        dataNature: "A组直接给出",
+        sources: "中国国家统计局/人民网；WRI Aqueduct 4.0；Mekonnen & Hoekstra (2011)",
+        drivers: ["长期干旱与旱季供水下降", "季节波动与洪涝", "灌溉水源稳定性"],
+        map: [38, 55]
+      },
+      {
+        id: "N02",
+        material: "甘蔗",
+        supplier: "中粮糖业-云南蔗区",
+        area: "云南梁河",
+        preciseLocation: "云南德宏州梁河县",
+        purchaseShare: 0.0185517500184126,
+        production: 1586.9,
+        productionYear: "2023",
+        waterFootprint: 540000000,
+        riskR: 0.3,
+        regionRisk: "低",
+        confidence: "中",
+        dataNature: "A组直接给出",
+        sources: "中国国家统计局/人民网；WRI Aqueduct 4.0；Mekonnen & Hoekstra (2011)",
+        drivers: ["长期干旱与旱季供水下降", "季节波动与洪涝"],
+        map: [34, 60]
+      },
+      {
+        id: "N03",
+        material: "甘蔗(原糖)",
+        supplier: "中粮糖业-巴西进口",
+        area: "巴西圣保罗/中南部",
+        preciseLocation: "巴西圣保罗州/中南部蔗区",
+        purchaseShare: 0.762224526561537,
+        production: 65200,
+        productionYear: "2023/2024",
+        waterFootprint: 3500000000,
+        riskR: 0.05,
+        regionRisk: "高",
+        confidence: "低",
+        dataNature: "B组进口拆分假设",
+        sources: "FAOSTAT；WRI Aqueduct 4.0；A组数据；Mekonnen & Hoekstra (2011)",
+        drivers: ["采购集中与单点失效", "季节波动与洪涝", "进口补充采购占比高"],
+        map: [22, 72]
+      },
+      {
+        id: "N04",
+        material: "甘蔗(原糖)",
+        supplier: "中粮糖业-泰国进口",
+        area: "泰国中部平原",
+        preciseLocation: "泰国中部平原/东北部蔗区",
+        purchaseShare: 0.0964821935231958,
+        production: 8253,
+        productionYear: "2023/2024",
+        waterFootprint: 360000000,
+        riskR: 0.8,
+        regionRisk: "中",
+        confidence: "低",
+        dataNature: "B组进口拆分假设",
+        sources: "FAOSTAT；中国糖业协会；泰国甘蔗糖业局；WRI Aqueduct 4.0",
+        drivers: ["基准水压力", "长期干旱与旱季供水下降", "地下水消耗"],
+        map: [58, 62]
+      },
+      {
+        id: "N05",
+        material: "甘蔗(原糖)",
+        supplier: "中粮糖业-古巴进口",
+        area: "古巴中部/西部",
+        preciseLocation: "古巴中部/西部蔗区",
+        purchaseShare: 0.00350716806700094,
+        production: 300,
+        productionYear: "2023/2024",
+        waterFootprint: 65000000,
+        riskR: 0.15,
+        regionRisk: "低",
+        confidence: "低",
+        dataNature: "B组进口拆分假设",
+        sources: "USDA FAS；文献估算；WRI Aqueduct 4.0",
+        drivers: ["季节波动与洪涝", "部分灌溉依赖"],
+        map: [28, 46]
+      },
+      {
+        id: "N06",
+        material: "甘蔗(原糖)",
+        supplier: "中粮糖业-澳大利亚进口",
+        area: "澳大利亚昆士兰",
+        preciseLocation: "澳大利亚昆士兰州",
+        purchaseShare: 0.0347911072246493,
+        production: 2976,
+        productionYear: "2023",
+        waterFootprint: 550000000,
+        riskR: 0.05,
+        regionRisk: "低",
+        confidence: "低",
+        dataNature: "B组进口拆分假设",
+        sources: "FAOSTAT；Canegrowers Australia；WRI Aqueduct 4.0",
+        drivers: ["灌溉水源稳定性", "季节波动与洪涝"],
+        map: [72, 78]
+      }
+    ],
+    scenarios: [
+      {
+        id: "dry20",
+        name: "旱季供水下降",
+        shortName: "Ri +20%",
+        description: "保持采购结构和水足迹不变，将各节点水风险参数 Ri 提高 20%。",
+        mode: "riskFactor",
+        factor: 1.2
+      },
+      {
+        id: "extreme40",
+        name: "极端干旱",
+        shortName: "Ri +40%",
+        description: "保持采购结构不变，将 Ri 提高 40%，并按 1.0 做上限截断。",
+        mode: "riskFactor",
+        factor: 1.4,
+        cap: 1
+      },
+      {
+        id: "brazilFail",
+        name: "供应商单点失效",
+        shortName: "巴西节点失效",
+        description: "巴西节点供应能力暂时失效，当前口径下该节点 SWE 置 0，同时记录供应缺口。",
+        mode: "nodeFailure",
+        failedNodeId: "N03"
+      },
+      {
+        id: "shift10",
+        name: "采购调整模板",
+        shortName: "N03 → N06 10%",
+        description: "扩展模板：将第一贡献节点 10% 采购占比转移到低风险备选节点，用于后续 C 组采购调整情景。",
+        mode: "purchaseShift",
+        fromNodeId: "N03",
+        toNodeId: "N06",
+        shiftShare: 0.1,
+        experimental: true
+      }
+    ]
+  },
+  dairy_milk: {
+    status: "placeholder",
+    title: "乳制品 - 原奶",
+    enterprise: "待接入",
+    subtitle: "后续行业模板已预留"
+  },
+  oilseed_soy: {
+    status: "placeholder",
+    title: "食品加工 - 大豆",
+    enterprise: "待接入",
+    subtitle: "后续行业模板已预留"
+  }
 };
+
+const DEFAULT_INDUSTRY = "sugar_sugarcane";
+const state = {
+  industryKey: localStorage.getItem("waterpulse.industry") || DEFAULT_INDUSTRY,
+  scenarioId: localStorage.getItem("waterpulse.scenario") || "dry20",
+  uploadedNodes: loadUploadedNodes()
+};
+
+function loadUploadedNodes() {
+  try {
+    const raw = localStorage.getItem("waterpulse.uploadedNodes");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function activeIndustry() {
+  const selected = INDUSTRY_CATALOG[state.industryKey] || INDUSTRY_CATALOG[DEFAULT_INDUSTRY];
+  if (selected.status !== "active") return INDUSTRY_CATALOG[DEFAULT_INDUSTRY];
+  return selected;
+}
+
+function activeNodes() {
+  return state.uploadedNodes && state.uploadedNodes.length ? state.uploadedNodes : activeIndustry().nodes;
+}
+
+function clamp(value, min = 0, max = 1) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function calcRows(nodes, scenario = null) {
+  let working = nodes.map((node) => ({ ...node, scenarioNote: "" }));
+
+  if (scenario?.mode === "riskFactor") {
+    working = working.map((node) => ({
+      ...node,
+      scenarioRiskR: clamp(node.riskR * scenario.factor, 0, scenario.cap || 1),
+      scenarioNote: `Ri ${scenario.shortName}`
+    }));
+  } else if (scenario?.mode === "nodeFailure") {
+    working = working.map((node) => ({
+      ...node,
+      scenarioRiskR: node.riskR,
+      scenarioFailed: node.id === scenario.failedNodeId,
+      scenarioNote: node.id === scenario.failedNodeId ? "节点失效" : "剩余供应"
+    }));
+  } else if (scenario?.mode === "purchaseShift") {
+    working = working.map((node) => ({ ...node, scenarioRiskR: node.riskR }));
+    const from = working.find((node) => node.id === scenario.fromNodeId);
+    const to = working.find((node) => node.id === scenario.toNodeId);
+    if (from && to) {
+      const shifted = Math.min(from.purchaseShare, scenario.shiftShare);
+      from.purchaseShare -= shifted;
+      to.purchaseShare += shifted;
+      from.scenarioNote = `转出 ${formatPercent(shifted, 1)}`;
+      to.scenarioNote = `转入 ${formatPercent(shifted, 1)}`;
+    }
+  }
+
+  working = working.map((node) => {
+    const effectiveRisk = node.scenarioRiskR ?? node.riskR;
+    const swe = node.scenarioFailed ? 0 : node.purchaseShare * node.waterFootprint * effectiveRisk;
+    return { ...node, effectiveRisk, swe };
+  });
+
+  const total = working.reduce((sum, node) => sum + node.swe, 0);
+  const ranked = [...working].sort((a, b) => b.swe - a.swe);
+  const rankMap = new Map(ranked.map((node, index) => [node.id, index + 1]));
+
+  return working
+    .map((node) => ({
+      ...node,
+      contribution: total > 0 ? node.swe / total : 0,
+      rank: rankMap.get(node.id),
+      priority: priorityLabel(rankMap.get(node.id), node.contribution)
+    }))
+    .sort((a, b) => a.rank - b.rank);
+}
+
+function priorityLabel(rank) {
+  if (rank <= 3) return "优先管理";
+  if (rank <= 5) return "跟踪观察";
+  return "低优先级";
+}
+
+function calcSummary(nodes, scenario = null) {
+  const rows = calcRows(nodes, scenario);
+  const total = rows.reduce((sum, node) => sum + node.swe, 0);
+  const hhi = rows.reduce((sum, node) => sum + node.purchaseShare ** 2, 0);
+  const top3 = rows.filter((node) => node.rank <= 3);
+  const top3Contribution = top3.reduce((sum, node) => sum + node.contribution, 0);
+  const highPriorityShare = top3.reduce((sum, node) => sum + node.purchaseShare, 0);
+  const failedNode = scenario?.mode === "nodeFailure" ? nodes.find((node) => node.id === scenario.failedNodeId) : null;
+
+  return {
+    rows,
+    total,
+    hhi,
+    top3,
+    top3Contribution,
+    highPriorityShare,
+    supplyGap: failedNode ? failedNode.purchaseShare : 0
+  };
+}
+
+function formatNumber(value, digits = 0) {
+  return Number(value).toLocaleString("zh-CN", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+}
+
+function formatPercent(value, digits = 1) {
+  return `${(value * 100).toLocaleString("zh-CN", { maximumFractionDigits: digits, minimumFractionDigits: digits })}%`;
+}
 
 function badge(text, tone = "gray") {
   return `<span class="badge ${tone}">${text}</span>`;
 }
 
-function metric(label, value, foot, tone) {
+function metric(label, value, foot, tone = "teal") {
   return `<div class="panel metric ${tone}"><div class="metric-label">${label}</div><div class="metric-value">${value}</div><div class="muted">${foot}</div></div>`;
 }
 
-function progress(active) {
-  return `<div class="progress">${NAV.map((item, i) => {
-    const n = i + 1;
-    const state = i < active ? "done" : i === active ? "active" : "";
-    const mark = i < active ? "✓" : n;
-    const sub = i < active ? "已完成" : i === active ? "进行中" : "未开始";
-    return `<div class="step ${state}"><div class="bubble">${mark}</div><div>${item[2]}</div><div>${sub}</div></div>`;
+function toneForRisk(label) {
+  if (label === "高") return "red";
+  if (label === "中") return "amber";
+  if (label === "低") return "green";
+  return "gray";
+}
+
+function toneForPriority(rank) {
+  if (rank <= 1) return "red";
+  if (rank <= 3) return "amber";
+  return "green";
+}
+
+function industrySelector() {
+  return `<div class="industry-switcher">${Object.entries(INDUSTRY_CATALOG).map(([key, item]) => {
+    const active = key === state.industryKey && item.status === "active";
+    const disabled = item.status !== "active";
+    return `<button class="industry-option ${active ? "active" : ""}" ${disabled ? "disabled" : ""} data-industry="${key}">
+      <strong>${item.title}</strong>
+      <span>${item.enterprise} · ${disabled ? "待接入" : "已接入"}</span>
+    </button>`;
   }).join("")}</div>`;
 }
 
-function rows() {
-  return NODES.map(n => {
-    const tone = n[6] === "高风险" ? "red" : n[6] === "中风险" ? "amber" : "green";
-    const dataTone = n[7] === "工作假设" ? "amber" : "green";
-    return `<tr><td>${n[0]}</td><td>${n[1]}</td><td>${n[2]} · ${n[3]}</td><td class="num">${n[4].toFixed(3)}</td><td class="num">${n[5].toFixed(3)}</td><td>${badge(n[6], tone)}</td><td>${badge(n[7], dataTone)}</td></tr>`;
-  }).join("");
+function rowsTable(rows, compact = false) {
+  return `<table>
+    <thead>
+      <tr>
+        <th>排名</th><th>节点</th><th>产区/供应商</th><th>采购比例</th><th>Ri</th><th>SWE</th><th>贡献度</th><th>区域风险</th><th>置信度</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map((node) => `<tr>
+        <td class="rank">${node.rank}</td>
+        <td><strong>${node.id}</strong><div class="muted">${node.material}</div></td>
+        <td>${node.area}<div class="muted">${compact ? node.scenarioNote || node.dataNature : node.supplier}</div></td>
+        <td class="num">${formatPercent(node.purchaseShare, 2)}</td>
+        <td class="num">${node.effectiveRisk.toFixed(2)}</td>
+        <td class="num">${formatNumber(node.swe)}</td>
+        <td class="num">${formatPercent(node.contribution, 2)}</td>
+        <td>${badge(node.regionRisk, toneForRisk(node.regionRisk))}</td>
+        <td>${badge(node.confidence, node.confidence === "中" ? "amber" : "gray")}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>`;
+}
+
+function progress(active) {
+  return `<div class="progress">${NAV.slice(1, 7).map((item, i) => {
+    const step = i + 1;
+    const stateName = i < active ? "done" : i === active ? "active" : "";
+    const label = i < active ? "已完成" : i === active ? "当前" : "待处理";
+    return `<div class="step ${stateName}"><div class="bubble">${i < active ? "✓" : step}</div><strong>${item[2]}</strong><span>${label}</span></div>`;
+  }).join("")}</div>`;
 }
 
 function homePage() {
+  const industry = activeIndustry();
+  const base = calcSummary(activeNodes());
+  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
+  const stressed = calcSummary(activeNodes(), scenario);
+  const delta = stressed.total - base.total;
+
   return `
-    <div class="tabs"><span class="tab active">总览</span><span class="tab">按原材料</span><span class="tab">按产地</span></div>
+    ${industrySelector()}
     <section class="grid overview">
-      <div class="panel"><div class="mini-grid"><div><div class="muted">行业分类</div><div class="strong">C14 食品制造业</div></div><div><div class="muted">关键原材料</div><div class="strong">大豆 / 甘蔗 / 甜菜等</div></div><div><div class="muted">评估年度</div><div class="strong">2026</div></div><div><div class="muted">供应节点数</div><div class="strong">10 个</div></div></div><div style="margin-top:16px;">${badge("数据性质：公开披露 5", "green")}${badge("工作假设 4", "amber")}${badge("模拟 1", "gray")}${badge("位置匹配 100%", "green")}${badge("数据质量 A", "amber")}</div></div>
-      <div class="panel"><div class="muted">状态标识图例</div>${badge("已确定","green")}${badge("工作假设","amber")}${badge("待验证","red")}${badge("暂不纳入","gray")}</div>
+      <div class="panel hero-panel">
+        <div class="kicker">当前 MVP 主线</div>
+        <h2>${industry.title}</h2>
+        <p>${industry.subtitle}</p>
+        <div class="hero-facts">
+          <span>${industry.enterprise}</span>
+          <span>${industry.sourceVersion}</span>
+          <span>${industry.method}</span>
+          <span>${industry.assessmentDate}</span>
+        </div>
+      </div>
+      <div class="panel status-panel">
+        <strong>验收闭环</strong>
+        ${progress(5)}
+      </div>
     </section>
-    <section class="grid metrics" style="margin-top:18px;">${metric("采购加权水风险敞口 Ek", "0.32<small> / 1.0</small>", "Σ wi × ri,k · 置信 中", "amberbar")}${metric("高风险采购占比 Ph", "52<small>%</small>", "阈值 r ≥ 0.4 · 4 节点", "redbar")}${metric("采购集中度 HHI", "0.16", "按供应节点权重估计", "greenbar")}${metric("Top 3 节点贡献占比", "66<small>%</small>", "用于定位优先调查对象", "redbar")}</section>
-    <section class="grid two" style="margin-top:18px;">
-      <div class="panel"><strong>分析流程 · 端到端进度</strong><div class="muted">每一步均可回看输入、公式版本与运行时间。</div>${progress(5)}<strong>按原材料产区分解敞口</strong><div class="bars">${["甜菜,185,redbar,12.1%","大豆,97,amberbar,6.4%","茶叶,62,amberbar,4.0%","甘蔗,58,greenbar,3.7%","番茄,53,amberbar,3.5%","玉米,22,greenbar,1.1%"].map(s => { const [name,h,t,v] = s.split(","); return `<div class="bar-wrap"><div class="bar ${t}" style="height:${h}px"><span>${v}</span></div><div class="muted">${name}</div></div>`; }).join("")}</div></div>
-      <div class="grid"><div class="panel-tight"><strong>数据质量提示</strong><div class="list" style="margin-top:14px;"><div class="list-item"><span class="bullet amber"></span><div><strong>采购权重合计已归一化</strong><div class="muted">当前权重和 100%，系统按统一口径计算敞口。</div></div></div><div class="list-item"><span class="bullet"></span><div><strong>公开披露与工作假设分层标记</strong><div class="muted">样例数据中区分真实披露、工作假设和模拟数据。</div></div></div><div class="list-item"><span class="bullet"></span><div><strong>ABC 组信息保留替换空间</strong><div class="muted">行业范围、数据链路、压力情景参数确认后集中替换。</div></div></div></div></div><div class="panel-tight"><strong>快速入口</strong><p class="muted"><a href="data-import.html">加载统一 10 节点演示样本</a><br><a href="risk-exposure.html">查看敞口复核表</a><br><a href="agent-analysis.html">向 Agent 提问本项目结果</a></p></div></div>
+    <section class="grid metrics">
+      ${metric("基准总 SWE", formatNumber(base.total), "m3/yr，来自 B 组公式", "teal")}
+      ${metric("第一贡献节点", base.top3[0].area, `${formatPercent(base.top3[0].contribution, 2)} · 与 B 组排名一致`, "red")}
+      ${metric("前三节点贡献", formatPercent(base.top3Contribution, 2), base.top3.map((node) => node.area).join(" / "), "amber")}
+      ${metric("当前情景变化", `${delta >= 0 ? "+" : ""}${formatNumber(delta)}`, scenario.name, delta >= 0 ? "red" : "green")}
+    </section>
+    <section class="grid two">
+      <div class="panel">
+        <div class="section-head">
+          <h3>风险节点排名</h3>
+          <a class="text-link" href="risk-exposure.html">查看明细</a>
+        </div>
+        ${rowsTable(base.rows.slice(0, 3), true)}
+      </div>
+      <div class="panel">
+        <h3>AI 诊断摘要</h3>
+        ${diagnosisList(buildDiagnosis(base, stressed, scenario).slice(0, 4))}
+      </div>
     </section>`;
 }
 
 function importPage() {
-  return `<section class="grid two"><div class="panel"><h3>1 · 行业与原材料</h3><div class="muted">行业分类（GB/T 4754-2017）</div><p>${badge("C13 农副食品加工业","gray")}${badge("C14 食品制造业","teal")}${badge("C15 酒 / 饮料 / 精制茶制造业","gray")}${badge("+ 自定义（待 A 组确认）","gray")}</p><div class="muted">关键原材料（与行业联动）</div><p>${badge("甘蔗","gray")}${badge("大豆","teal")}${badge("玉米","gray")}${badge("番茄","gray")}${badge("原奶","gray")}${badge("棕榈","gray")}${badge("茶叶","gray")}</p><div class="grid three" style="margin-top:22px;"><div class="select-card"><div class="muted">L1</div><strong>国家 / 原材料 / 权重</strong></div><div class="select-card"><div class="muted">L2</div><strong>省 / 州 / 供应商</strong></div><div class="select-card active"><div class="muted">L3 ✓</div><strong>经纬度 / 流域 ID</strong></div></div></div><div class="panel"><h3>2 · 导入方式</h3><div class="upload-box"><div><div style="font-size:34px;color:var(--teal);">↥</div><strong>拖拽或选择 CSV / Excel 文件</strong><div class="muted">supply_nodes_甲公司_v3.csv · 10 行 · 已上传</div></div></div><div class="grid two" style="margin-top:18px;"><span class="button">加载统一样本</span><span class="button">手工录入单个节点</span></div><hr style="border:0;border-top:1px solid var(--line);margin:22px 0;"><h3>字段映射</h3><p class="muted">“供应商名称” → <strong>supplier_name</strong><br>“采购金额 / 权重” → <strong>purchase_weight</strong><br>“经度 / 纬度” → <strong>lon / lat</strong></p></div></section><section class="grid four" style="margin-top:18px;">${metric("数据质量等级", "A<small> 86/100</small>", "公开披露 + 工作假设分层", "amberbar")}${metric("校验通过", "10<small> / 10 节点</small>", "坐标与权重字段完整", "greenbar")}${metric("采购权重合计", "100<small>%</small>", "已自动归一化", "greenbar")}${metric("数据性质构成", "5 / 4 / 1", "公开披露 / 假设 / 模拟", "amberbar")}</section><section class="panel" style="margin-top:18px;"><h3>节点预览与校验结果</h3><table><thead><tr><th>节点</th><th>原材料</th><th>供应商 / 产地</th><th>采购权重</th><th>风险分数</th><th>风险等级</th><th>数据性质</th></tr></thead><tbody>${rows()}</tbody></table></section>`;
+  const industry = activeIndustry();
+  const rows = calcSummary(activeNodes()).rows;
+  const usingUpload = Boolean(state.uploadedNodes);
+
+  return `
+    <section class="grid two">
+      <div class="panel">
+        <h3>项目数据</h3>
+        <div class="form-grid">
+          <label>行业</label><div>${badge(industry.title, "teal")}</div>
+          <label>企业</label><div>${industry.enterprise}</div>
+          <label>输入状态</label><div>${usingUpload ? badge("用户上传数据", "amber") : badge("示例数据", "green")}</div>
+          <label>必需字段</label><div>${industry.requiredFields.map((field) => badge(field, "gray")).join("")}</div>
+        </div>
+        <div class="upload-box">
+          <input id="csvInput" type="file" accept=".csv,text/csv" />
+          <div>
+            <strong>上传 CSV 企业节点表</strong>
+            <p class="muted">支持列名：节点编号、产区/供应商、精确位置、采购比例(E)、水足迹W、BWS系数R、置信度。</p>
+          </div>
+        </div>
+        <div class="button-row">
+          <button class="button primary" id="useSampleBtn">使用示例数据</button>
+          <button class="button" id="downloadTemplateBtn">下载 CSV 模板</button>
+        </div>
+        <div id="uploadStatus" class="notice"></div>
+      </div>
+      <div class="panel">
+        <h3>校验结果</h3>
+        ${validationPanel(activeNodes())}
+      </div>
+    </section>
+    <section class="panel">
+      <div class="section-head">
+        <h3>导入后节点预览</h3>
+        <span class="muted">采购比例合计 ${formatPercent(activeNodes().reduce((sum, node) => sum + node.purchaseShare, 0), 2)}</span>
+      </div>
+      ${rowsTable(rows)}
+    </section>`;
+}
+
+function validationPanel(nodes) {
+  const share = nodes.reduce((sum, node) => sum + node.purchaseShare, 0);
+  const missing = nodes.flatMap((node) => ["id", "area", "purchaseShare", "waterFootprint", "riskR"].filter((key) => node[key] === undefined || node[key] === null || node[key] === ""));
+  return `<div class="validation-list">
+    <div><strong>${nodes.length}</strong><span>节点数量</span></div>
+    <div><strong>${formatPercent(share, 2)}</strong><span>采购比例合计</span></div>
+    <div><strong>${missing.length}</strong><span>缺失字段</span></div>
+    <div><strong>${nodes.filter((node) => node.confidence === "低").length}</strong><span>低置信度节点</span></div>
+  </div>
+  <p class="muted">本结果为筛查和优先级排序，不解释为实际财务损失概率。</p>`;
 }
 
 function libraryPage() {
-  return `<section class="grid three"><div class="panel"><h3>Aqueduct 4.0</h3><p class="muted">用于基准水压力、未来水压力、干旱与洪涝风险等空间指标匹配。</p>${badge("v2026.1","gray")}${badge("水风险指标","teal")}</div><div class="panel"><h3>AQUASTAT / FAO</h3><p class="muted">用于国家层面用水、农业用水与缺水背景补充。</p>${badge("国家级数据","gray")}${badge("公开来源","green")}</div><div class="panel"><h3>企业公开披露</h3><p class="muted">用于供应节点、供应商、原材料和采购范围的初始验证。</p>${badge("可追溯","green")}${badge("待复核","amber")}</div></section><section class="grid two" style="margin-top:18px;"><div class="panel"><h3>字段字典</h3><table><thead><tr><th>字段</th><th>含义</th><th>状态</th></tr></thead><tbody><tr><td>supplier_name</td><td>供应商名称</td><td>${badge("已确定","green")}</td></tr><tr><td>material</td><td>原材料类别</td><td>${badge("待 A 组最终确认","amber")}</td></tr><tr><td>basin_id</td><td>匹配流域编号</td><td>${badge("B 组口径","teal")}</td></tr><tr><td>scenario_factor</td><td>压力测试情景参数</td><td>${badge("待 C 组确认","amber")}</td></tr></tbody></table></div><div class="panel"><h3>证据链状态</h3><div class="list"><div class="list-item"><span class="bullet green"></span><div><strong>公开披露 5 个节点</strong><div class="muted">可作为当前样例的确定来源。</div></div></div><div class="list-item"><span class="bullet amber"></span><div><strong>工作假设 4 个节点</strong><div class="muted">报告中保留假设声明，后续替换真实数据。</div></div></div><div class="list-item"><span class="bullet"></span><div><strong>模拟数据 1 个节点</strong><div class="muted">仅用于界面和流程演示，不进入真实结论。</div></div></div></div></div></section>`;
+  const industry = activeIndustry();
+  return `
+    ${industrySelector()}
+    <section class="grid two">
+      <div class="panel">
+        <h3>行业依赖机制</h3>
+        <div class="mechanism-list">
+          ${industry.mechanisms.map((item) => `<article class="mechanism">
+            <strong>${item.indicator}</strong>
+            <p>${item.why}</p>
+            <p class="muted">${item.consequence}</p>
+          </article>`).join("")}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>风险原因 - 措施库</h3>
+        <div class="action-list">
+          ${industry.mechanisms.map((item) => `<div class="action-item">
+            <span>${item.indicator}</span>
+            <ul>${item.measures.map((measure) => `<li>${measure}</li>`).join("")}</ul>
+          </div>`).join("")}
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <h3>后续行业接入结构</h3>
+      <div class="schema-grid">
+        ${["industryId", "materialId", "mechanisms", "nodes", "scenarios", "requiredFields"].map((field) => `<div><strong>${field}</strong><span>已在配置中预留</span></div>`).join("")}
+      </div>
+    </section>`;
 }
 
 function mapPage() {
-  const nodes = [["S002 甜菜·新疆",70,42,"risk-red"],["S003 大豆·美国",55,24,"risk-green"],["S008 茶叶·云南",27,38,"risk-red"],["S005 番茄·山东",76,45,"risk-red"],["S010 甘蔗·广西",33,65,"risk-red"],["S001 大豆·巴西",20,22,"risk-amber"],["S004 甘蔗·云南",47,63,"risk-green"]];
-  return `<section class="grid map-layout"><div class="panel-tight"><h3>筛选</h3><div class="muted">原材料</div><p>${badge("大豆","teal")}${badge("甘蔗","teal")}${badge("甜菜","teal")}${badge("番茄","teal")}${badge("茶叶","teal")}</p><div class="muted">风险等级</div><p>${badge("高风险 · 4 节点","red")}${badge("中风险 · 1 节点","amber")}${badge("低风险 · 2 节点","green")}</p><div class="muted">图层</div><p>${badge("流域边界 开","teal")}${badge("点风险着色 开","teal")}${badge("Aqueduct 网格叠加 P2","gray")}</p></div><div class="panel"><h3>节点 — 流域拓扑视图</h3><p class="muted">布局非地理精确坐标，仅表示供应节点与流域匹配关系。</p><div class="map-canvas">${nodes.map(n => `<span class="map-node ${n[3]}" style="left:${n[1]}%;top:${n[2]}%;" data-label="${n[0]}"></span>`).join("")}${[[28,30,"risk-red"],[60,32,"risk-green"],[78,35,"risk-red"],[45,56,"risk-amber"],[22,64,"risk-green"]].map(b => `<span class="basin ${b[2]}" style="left:${b[0]}%;top:${b[1]}%;"></span>`).join("")}</div></div><div class="grid"><div class="panel-tight"><h3>节点详情 · S002</h3><p class="muted">原材料 <strong>甜菜</strong><br>供应商 / 产地 <strong>新疆甜菜供应商</strong><br>匹配流域 <strong>HB-3311</strong><br>采购权重 <strong>0.293</strong><br>风险得分 <strong>0.413</strong></p>${badge("数据源 Aqueduct 4.0","gray")}${badge("置信 中","amber")}</div><div class="panel-tight"><h3>匹配问题清单</h3><p class="muted"><strong>S008 · 需复核茶叶产区</strong><br>当前按省级匹配，建议补充精确坐标。<br><br><strong>S011 · 待 ABC 数据补全</strong><br>暂不进入当前 10 节点样本。</p><span class="button primary">返回数据导入修复</span></div></div></section>`;
+  const rows = calcSummary(activeNodes()).rows;
+  const maxShare = Math.max(...rows.map((node) => node.purchaseShare));
+  return `
+    <section class="grid map-layout">
+      <div class="panel">
+        <h3>图层</h3>
+        <p>${badge("节点大小=采购比例", "teal")}${badge("颜色=管理优先级", "amber")}${badge("标签=产区", "gray")}</p>
+        <div class="legend">
+          <span><i class="dot red-dot"></i>优先管理</span>
+          <span><i class="dot amber-dot"></i>跟踪观察</span>
+          <span><i class="dot green-dot"></i>低优先级</span>
+        </div>
+      </div>
+      <div class="panel map-panel">
+        <h3>供应链节点分布</h3>
+        <div class="map-canvas">
+          <div class="map-gridline"></div>
+          ${rows.map((node) => {
+            const size = 18 + (node.purchaseShare / maxShare) * 34;
+            const tone = toneForPriority(node.rank);
+            return `<button class="map-node ${tone}" style="left:${node.map[0]}%;top:${node.map[1]}%;width:${size}px;height:${size}px" title="${node.area}">
+              <span>${node.id}</span><em>${node.area}</em>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
+      <div class="panel">
+        <h3>位置匹配说明</h3>
+        <div class="list">
+          ${rows.slice(0, 4).map((node) => `<div class="list-item">
+            <strong>${node.area}</strong>
+            <span>${node.preciseLocation}</span>
+            <small>${node.dataNature}</small>
+          </div>`).join("")}
+        </div>
+      </div>
+    </section>`;
 }
 
 function riskPage() {
-  return `<section class="grid metrics">${metric("Ek 采购加权敞口", "0.32<small>/1.0</small>", "Σ 贡献 = 0.3155 · v0.3", "amberbar")}${metric("高风险采购占比 Ph", "52<small>%</small>", "阈值 r ≥ 0.4 · 4 节点", "redbar")}${metric("采购集中度 HHI", "0.16", "Σwi² · 10 节点", "greenbar")}${metric("Top 3 贡献占比", "66<small>%</small>", "S002 / S003 / S008", "redbar")}</section><section class="grid two" style="margin-top:18px;"><div class="panel"><h3>节点贡献复核表</h3><table><thead><tr><th>节点</th><th>原材料</th><th>供应商 / 产地</th><th>采购权重</th><th>风险分数</th><th>风险等级</th><th>数据性质</th></tr></thead><tbody>${rows()}</tbody></table></div><div class="grid"><div class="panel-tight"><h3>敏感性分析 · 缺失权重处理</h3><div class="scenario-row"><strong>当前采用</strong><div class="track"><div class="fill" style="width:58%"></div></div><strong>0.32</strong></div><div class="scenario-row"><strong>低权重情形</strong><div class="track"><div class="fill amber" style="width:52%"></div></div><strong>0.28</strong></div><div class="scenario-row"><strong>高权重情形</strong><div class="track"><div class="fill red" style="width:66%"></div></div><strong>0.36</strong></div><p class="muted">结果对权重假设中度敏感，建议优先补全高贡献节点。</p></div><div class="panel-tight"><h3>公式与版本</h3><p class="muted"><strong>Ek = Σ (wi × ri,k)</strong><br>wi = 采购金额占比<br>ri,k = 节点所在地风险指标（0–1 归一化）</p>${badge("公式 v0.3","teal")}${badge("阈值 r ≥ 0.4","gray")}</div></div></section><section class="panel" style="margin-top:18px;"><h3>改进潜力矩阵</h3><div class="scatter">${NODES.map((n, i) => { const x = Math.round(n[5] * 84 + 6); const y = Math.round(88 - n[4] * 190); const tone = n[6] === "高风险" ? "risk-red" : n[6] === "中风险" ? "risk-amber" : "risk-green"; return `<span class="point ${tone}" style="left:${x}%;top:${y}%">${i+1}<span>${n[0]}</span></span>`; }).join("")}</div></section>`;
+  const base = calcSummary(activeNodes());
+  return `
+    <section class="grid metrics">
+      ${metric("总 SWE", formatNumber(base.total), "Σ(SWEi)", "teal")}
+      ${metric("Top 3 贡献", formatPercent(base.top3Contribution, 2), "管理优先级集中度", "red")}
+      ${metric("Top 3 采购占比", formatPercent(base.highPriorityShare, 2), "暴露量集中度", "amber")}
+      ${metric("HHI", base.hhi.toFixed(3), "Σ(Ei^2)", "green")}
+    </section>
+    <section class="grid two">
+      <div class="panel">
+        <h3>节点排名复核表</h3>
+        ${rowsTable(base.rows)}
+      </div>
+      <div class="panel">
+        <h3>双维度判断</h3>
+        <div class="quadrant">
+          ${base.rows.map((node) => `<span class="point ${toneForPriority(node.rank)}" style="left:${8 + node.purchaseShare * 86}%;bottom:${8 + node.riskR * 84}%">
+            ${node.id}<em>${node.area}</em>
+          </span>`).join("")}
+          <label class="x-label">企业采购占比</label>
+          <label class="y-label">区域风险 Ri</label>
+        </div>
+        <p class="muted">该图把区域本身风险和企业采购暴露分开看，避免把“区域高风险但采购少”和“区域不高但采购高度集中”混为一谈。</p>
+      </div>
+    </section>`;
 }
 
 function stressPage() {
-  return `<section class="grid three"><div class="panel"><h3>基准情景</h3><div class="metric-value">0.32</div><p class="muted">使用当前样例节点、当前权重与 Aqueduct 基准风险指标。</p>${badge("已计算","green")}</div><div class="panel"><h3>2030 水压力上升</h3><div class="metric-value">0.39</div><p class="muted">对高风险流域施加 C 组待确认的上升参数。</p>${badge("参数占位","amber")}</div><div class="panel"><h3>关键供应中断</h3><div class="metric-value">23<small>%</small></div><p class="muted">假设高贡献节点阶段性中断，估算受影响采购权重。</p>${badge("待业务确认","amber")}</div></section><section class="grid two" style="margin-top:18px;"><div class="panel"><h3>情景参数面板</h3><div class="scenario-row"><strong>未来水压力</strong><div class="track"><div class="fill red" style="width:66%"></div></div><span>+24%</span></div><div class="scenario-row"><strong>旱季供水下降</strong><div class="track"><div class="fill amber" style="width:42%"></div></div><span>-15%</span></div><div class="scenario-row"><strong>供应中断比例</strong><div class="track"><div class="fill" style="width:36%"></div></div><span>10%</span></div><p class="muted">这些参数为页面预留位，等 C 组最终信息确定后集中替换。</p></div><div class="panel"><h3>管理含义</h3><div class="list"><div class="list-item"><span class="bullet red"></span><div><strong>S002 与 S008 是优先复核对象</strong><div class="muted">贡献高且情景压力上升后更敏感。</div></div></div><div class="list-item"><span class="bullet amber"></span><div><strong>高风险采购占比可能从 52% 升至 61%</strong><div class="muted">依赖 C 组阈值确认，不作为最终预测。</div></div></div><div class="list-item"><span class="bullet green"></span><div><strong>低风险节点具备替代产能讨论价值</strong><div class="muted">可进入后续供应商策略分析。</div></div></div></div></div></section>`;
+  const industry = activeIndustry();
+  const base = calcSummary(activeNodes());
+  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
+  const stressed = calcSummary(activeNodes(), scenario);
+  const delta = stressed.total - base.total;
+
+  return `
+    <section class="panel">
+      <div class="section-head">
+        <h3>情景切换</h3>
+        <div class="segmented">
+          ${industry.scenarios.map((item) => `<button class="${item.id === scenario.id ? "active" : ""}" data-scenario="${item.id}">
+            ${item.name}${item.experimental ? "<small>扩展</small>" : ""}
+          </button>`).join("")}
+        </div>
+      </div>
+      <p class="muted">${scenario.description}</p>
+    </section>
+    <section class="grid metrics">
+      ${metric("基准总 SWE", formatNumber(base.total), "m3/yr", "teal")}
+      ${metric("情景总 SWE", formatNumber(stressed.total), "m3/yr", delta >= 0 ? "red" : "green")}
+      ${metric("变化值", `${delta >= 0 ? "+" : ""}${formatNumber(delta)}`, `${delta >= 0 ? "增加" : "减少"} ${formatPercent(Math.abs(delta) / base.total, 2)}`, delta >= 0 ? "red" : "green")}
+      ${metric("供应缺口", formatPercent(stressed.supplyGap, 2), scenario.mode === "nodeFailure" ? "节点失效需单独解释" : "无结构性缺口", "amber")}
+    </section>
+    <section class="grid two">
+      <div class="panel">
+        <h3>情景后节点排名</h3>
+        ${rowsTable(stressed.rows, true)}
+      </div>
+      <div class="panel">
+        <h3>情景含义</h3>
+        ${scenarioNarrative(base, stressed, scenario)}
+      </div>
+    </section>`;
+}
+
+function scenarioNarrative(base, stressed, scenario) {
+  if (scenario.mode === "nodeFailure") {
+    const newTop = stressed.top3[0];
+    return `<div class="callout amber">
+      <strong>不要把 SWE 下降解释为风险下降</strong>
+      <p>巴西节点失效后，剩余供应链总 SWE 为 ${formatNumber(stressed.total)}，但同时形成 ${formatPercent(stressed.supplyGap, 2)} 的供应缺口。剩余风险重新集中到 ${newTop.area}，其贡献度升至 ${formatPercent(newTop.contribution, 2)}。</p>
+    </div>`;
+  }
+  return `<div class="callout red">
+    <strong>${scenario.name}放大了既有风险结构</strong>
+    <p>总 SWE 从 ${formatNumber(base.total)} 变为 ${formatNumber(stressed.total)}。前三节点仍为 ${stressed.top3.map((node) => node.area).join("、")}，说明当前风险结构主要由采购规模、水足迹和既有区域风险共同决定。</p>
+  </div>`;
 }
 
 function agentPage() {
-  return `<section class="grid two"><div class="panel"><h3>与 Agent 对话 · 甲公司项目</h3><div class="chat"><div class="msg user">帮我看看甲公司的大豆供应链有没有水风险问题。</div><div class="msg agent">甲公司的大豆采购是否有明确的产区或供应商清单？如果没有，我会先用企业公开披露信息做初步匹配，并把结果标注为工作假设。</div><div class="msg user">没有内部清单，先用公开信息。</div><div><span class="tool">✓ 调用 query_data_library → match_water_risk</span></div><div class="msg agent">已匹配到样例采购节点与水风险指标。本轮加权敞口 Ek 为 0.32，高风险采购占比为 52%。其中 S002、S005、S008、S010 被识别为高风险节点。以上为研究原型结果，待 ABC 组最终数据口径确认后替换。</div></div></div><div class="grid"><div class="panel-tight"><h3>工具调用记录</h3><table><tbody><tr><td>14:02:11</td><td><strong>validate_project_data()</strong><div class="muted">检查 10 节点字段完整性</div></td></tr><tr><td>14:02:14</td><td><strong>query_data_library()</strong><div class="muted">读取本地样本与公开来源</div></td></tr><tr><td>14:02:15</td><td><strong>match_water_risk()</strong><div class="muted">匹配节点风险指标</div></td></tr><tr><td>14:03:47</td><td><strong>run_stress_test()</strong><div class="muted">未来水压力情景重算</div></td></tr></tbody></table></div><div class="panel-tight"><h3>管理建议（草稿）</h3><div class="list"><div class="list-item"><span class="bullet red"></span><div><strong>关注高贡献节点</strong><div class="muted">优先复核 S002、S008、S005、S010 的产地与权重口径。</div></div></div><div class="list-item"><span class="bullet amber"></span><div><strong>补全采购权重披露</strong><div class="muted">对工作假设节点补充真实采购金额或数量口径。</div></div></div></div></div></div></section>`;
+  const industry = activeIndustry();
+  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
+  const base = calcSummary(activeNodes());
+  const stressed = calcSummary(activeNodes(), scenario);
+  const diagnosis = buildDiagnosis(base, stressed, scenario);
+
+  return `
+    <section class="grid two">
+      <div class="panel">
+        <div class="section-head">
+          <h3>结构化 AI 诊断</h3>
+          <div>
+            ${badge("API 未配置时使用规则诊断", "amber")}
+            <a class="button primary" href="diagnosis-report.html">打开正式报告</a>
+            <a class="button" href="waterpulse-sugarcane-diagnosis-report.pdf">下载 PDF</a>
+          </div>
+        </div>
+        ${diagnosisList(diagnosis)}
+      </div>
+      <div class="panel">
+        <h3>Agent 输入边界</h3>
+        <div class="guardrail-grid">
+          ${["只总结 A/B/C 输入", "不编造风险指标", "不自行计算 SWE", "不改变 B 组排名", "不假设采购比例", "不解释为损失概率"].map((item, index) => `<div class="${index === 0 ? "ok" : ""}">${item}</div>`).join("")}
+        </div>
+        <h3>传给后端的 JSON 摘要</h3>
+        <pre>${escapeHtml(JSON.stringify(agentPayload(base, stressed, scenario), null, 2))}</pre>
+      </div>
+    </section>`;
+}
+
+function buildDiagnosis(base, stressed, scenario) {
+  const top3 = base.top3;
+  const scenarioDelta = stressed.total - base.total;
+  const nodeAdvice = top3.flatMap((node) => {
+    const mechanisms = activeIndustry().mechanisms.filter((item) => node.drivers.includes(item.indicator));
+    return mechanisms.slice(0, 1).map((item) => `${node.id} ${node.area}：${item.measures[0]}，对应风险原因“${item.indicator}”。`);
+  });
+  return [
+    { title: "总体诊断", body: `基准总 SWE 为 ${formatNumber(base.total)} m3/yr，风险管理优先级集中在 ${top3.map((node) => node.area).join("、")}。` },
+    { title: "前三大风险节点", body: top3.map((node) => `${node.rank}. ${node.id} ${node.area}，贡献度 ${formatPercent(node.contribution, 2)}`).join("；") },
+    { title: "风险原因", body: top3.map((node) => `${node.id}：${node.drivers.join("、")}`).join("；") },
+    { title: "风险传导路径", body: "水风险变化会通过供水稳定性、单产、含糖量、采购成本和压榨连续性传导到企业经营管理。" },
+    { title: "情景对比", body: `${scenario.name}下总 SWE 为 ${formatNumber(stressed.total)}，相对基准${scenarioDelta >= 0 ? "增加" : "减少"} ${formatNumber(Math.abs(scenarioDelta))}。` },
+    { title: "短期管理措施", body: nodeAdvice.slice(0, 2).join(" ") },
+    { title: "中长期管理措施", body: "建立替代产区池、供应商水管理合作机制和坐标级水风险数据更新流程。" },
+    { title: "数据缺口与置信度", body: "进口原糖四国产区采购占比为 B 组工作假设，需用企业真实采购台账和具体蔗区坐标复核。" }
+  ];
+}
+
+function diagnosisList(items) {
+  return `<div class="diagnosis-list">${items.map((item) => `<article>
+    <strong>${item.title}</strong>
+    <p>${item.body}</p>
+  </article>`).join("")}</div>`;
+}
+
+function agentPayload(base, stressed, scenario) {
+  return {
+    industry: activeIndustry().title,
+    enterprise: activeIndustry().enterprise,
+    calculationConclusion: {
+      baselineTotalSWE: Math.round(base.total),
+      top3: base.top3.map((node) => ({ id: node.id, area: node.area, contribution: Number((node.contribution * 100).toFixed(2)) }))
+    },
+    scenarioConclusion: {
+      scenario: scenario.name,
+      totalSWE: Math.round(stressed.total),
+      supplyGap: Number((stressed.supplyGap * 100).toFixed(2))
+    },
+    dataGaps: ["进口原糖拆分比例", "具体蔗区坐标", "供应商级灌溉水源"]
+  };
 }
 
 function reportPage() {
-  return `<section class="grid two"><div class="panel"><h3>报告结构</h3><div class="grid"><div class="report-section"><strong>1. 项目边界与数据声明</strong><span class="muted">行业、原材料、节点范围、公开披露与工作假设说明。</span></div><div class="report-section"><strong>2. 核心水风险指标</strong><span class="muted">Ek、Ph、HHI、Top3 贡献及公式版本。</span></div><div class="report-section"><strong>3. 节点清单与空间匹配</strong><span class="muted">供应商、产地、坐标/省级匹配、流域编号。</span></div><div class="report-section"><strong>4. 压力测试与管理建议</strong><span class="muted">C 组情景参数确认后替换最终解释。</span></div></div></div><div class="panel"><h3>导出状态</h3><div class="list"><div class="list-item"><span class="bullet green"></span><div><strong>可导出 CSV 复核表</strong><div class="muted">包含节点、权重、风险分数、贡献、来源。</div></div></div><div class="list-item"><span class="bullet amber"></span><div><strong>报告正文为草稿</strong><div class="muted">ABC 组口径确定后替换占位字段。</div></div></div><div class="list-item"><span class="bullet"></span><div><strong>远程预览已上线</strong><div class="muted">GitHub Pages 用于对外查看设计和结构。</div></div></div></div><p><span class="button primary">生成完整报告 →</span> <span class="button">导出节点清单 CSV</span></p></div></section>`;
+  const industry = activeIndustry();
+  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
+  const base = calcSummary(activeNodes());
+  const stressed = calcSummary(activeNodes(), scenario);
+  return `
+    <section class="grid two">
+      <div class="panel">
+        <h3>一页诊断结果</h3>
+        <div class="report-card">
+          <h2>${industry.enterprise} ${industry.title}水风险诊断</h2>
+          <p>基准总 SWE：<strong>${formatNumber(base.total)}</strong> m3/yr</p>
+          <p>前三节点：${base.top3.map((node) => `${node.id} ${node.area} ${formatPercent(node.contribution, 2)}`).join("；")}</p>
+          <p>当前情景：${scenario.name}，情景总 SWE ${formatNumber(stressed.total)} m3/yr。</p>
+          <p>数据缺口：进口拆分比例、蔗区坐标、供应商灌溉水源。</p>
+        </div>
+        <div class="button-row">
+          <a class="button primary" href="diagnosis-report.html">打开正式报告文件</a>
+          <a class="button primary" href="waterpulse-sugarcane-diagnosis-report.pdf">下载正式报告 PDF</a>
+          <a class="button" href="diagnosis-report.html" download>下载正式报告 HTML</a>
+          <button class="button" onclick="window.print()">打印</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>交付检查</h3>
+        <div class="check-list">
+          ${["行业画像", "企业数据导入", "节点排名", "压力测试", "AI诊断", "下载诊断结果", "多行业配置扩展点"].map((item) => `<span>✓ ${item}</span>`).join("")}
+        </div>
+      </div>
+    </section>`;
 }
 
-const PAGES = { home: homePage, import: importPage, library: libraryPage, map: mapPage, risk: riskPage, stress: stressPage, agent: agentPage, report: reportPage };
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  const headers = lines.shift().split(",").map((item) => item.trim());
+  return lines.map((line, index) => {
+    const cells = line.split(",").map((item) => item.trim());
+    const row = Object.fromEntries(headers.map((header, i) => [header, cells[i] || ""]));
+    return {
+      id: row["节点编号"] || `U${String(index + 1).padStart(2, "0")}`,
+      material: row["原材料"] || "甘蔗",
+      supplier: row["产区/供应商"] || row["供应商"] || "用户上传节点",
+      area: row["产区/供应商"] || row["精确位置"] || "用户上传节点",
+      preciseLocation: row["精确位置"] || row["产区/供应商"] || "待补充",
+      purchaseShare: Number(row["采购比例(E)"] || row["采购比例"] || 0),
+      waterFootprint: Number(row["水足迹W"] || row["水足迹"] || 0),
+      riskR: Number(row["BWS系数R"] || row["区域风险R"] || 0),
+      regionRisk: row["区域风险等级"] || "待定",
+      confidence: row["置信度"] || "低",
+      dataNature: "用户上传",
+      sources: row["数据来源"] || "用户上传",
+      drivers: ["长期干旱与旱季供水下降", "基准水压力"],
+      map: [25 + index * 10, 45 + (index % 3) * 10],
+      production: 0,
+      productionYear: ""
+    };
+  }).filter((node) => node.purchaseShare > 0 && node.waterFootprint > 0);
+}
+
+function attachEvents() {
+  document.querySelectorAll("[data-industry]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.industryKey = button.dataset.industry;
+      localStorage.setItem("waterpulse.industry", state.industryKey);
+      render();
+    });
+  });
+  document.querySelectorAll("[data-scenario]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.scenarioId = button.dataset.scenario;
+      localStorage.setItem("waterpulse.scenario", state.scenarioId);
+      render();
+    });
+  });
+  const csvInput = document.getElementById("csvInput");
+  if (csvInput) {
+    csvInput.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const nodes = parseCsv(text);
+      if (nodes.length < 1) {
+        document.getElementById("uploadStatus").textContent = "未识别到有效节点，请检查采购比例、水足迹和 BWS 系数字段。";
+        return;
+      }
+      const total = nodes.reduce((sum, node) => sum + node.purchaseShare, 0);
+      const normalized = nodes.map((node) => ({ ...node, purchaseShare: node.purchaseShare / total }));
+      state.uploadedNodes = normalized;
+      localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
+      render();
+    });
+  }
+  const useSampleBtn = document.getElementById("useSampleBtn");
+  if (useSampleBtn) {
+    useSampleBtn.addEventListener("click", () => {
+      state.uploadedNodes = null;
+      localStorage.removeItem("waterpulse.uploadedNodes");
+      render();
+    });
+  }
+  const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
+  if (downloadTemplateBtn) {
+    downloadTemplateBtn.addEventListener("click", () => {
+      downloadFile("waterpulse_upload_template.csv", "节点编号,原材料,产区/供应商,精确位置,采购比例(E),水足迹W,BWS系数R,区域风险等级,置信度,数据来源\nN01,甘蔗,示例产区,示例位置,0.25,540000000,0.15,低,中,企业上传\n");
+    });
+  }
+  const downloadReportBtn = document.getElementById("downloadReportBtn");
+  if (downloadReportBtn) {
+    downloadReportBtn.addEventListener("click", () => {
+      const report = document.querySelector(".report-card").outerHTML;
+      downloadFile("waterpulse_diagnosis.html", `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>WaterPulse 诊断结果</title><body>${report}</body></html>`);
+    });
+  }
+}
+
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+}
+
+const PAGES = {
+  home: homePage,
+  import: importPage,
+  library: libraryPage,
+  map: mapPage,
+  risk: riskPage,
+  stress: stressPage,
+  agent: agentPage,
+  report: reportPage
+};
 
 function render() {
   const page = document.body.dataset.page || "home";
-  const meta = META[page] || META.home;
-  const navHtml = NAV.map(item => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span class="nav-muted">${item[1]}</span><span class="nav-muted">${item[0]}</span><span>${item[2]}</span></a>`).join("");
-  document.getElementById("app").innerHTML = `<div class="app"><aside class="sidebar"><a class="logo" href="index.html"><span class="drop"></span><span><span class="brand">水脉 WaterPulse</span><span class="brand-sub">UPSTREAM WATER RISK<br>AGENT</span></span></a><div class="project"><div class="label">当前项目</div><strong>甲公司 · 植物基蛋白原料</strong><span>C14 食品制造业 · 2026 评估年度</span></div><div class="nav-title">分析流程</div>${navHtml}<div class="nav-title">系统</div><a class="nav-item" href="report-export.html"><span class="nav-muted">⚙</span><span class="nav-muted">·</span><span>设置 / 审计日志</span></a><div class="side-foot">● 远程静态站已部署<br><strong style="color:#fff;">MVP 初步设计版</strong><br>ABC 组信息预留可替换空间</div></aside><main><div class="topbar"><div class="crumb">水脉 WaterPulse / <strong>${NAV.find(n => n[4] === page)?.[2] || "首页总览"}</strong></div><div class="actions"><span class="chip"><span class="dot"></span>静态预览已上线</span><span class="chip">公式 v0.3 · 2026-08-08</span></div></div><div class="kicker">${meta[0]}</div><h1>${meta[1]}</h1><p class="lead">${meta[2]}</p>${PAGES[page] ? PAGES[page]() : homePage()}<footer>水脉 WaterPulse · 水风险管理 AI Agent MVP。本文为永久静态预览，用于远程查看网页设计与核心内容；完整交互版可继续部署到 Streamlit Cloud。</footer></main></div>`;
+  const industry = activeIndustry();
+  const currentNav = NAV.find((item) => item[4] === page) || NAV[0];
+  const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
+  document.getElementById("app").innerHTML = `
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="logo" href="index.html"><span class="logo-mark"></span><span><strong>WaterPulse</strong><em>AI Water Risk Agent</em></span></a>
+        <div class="project-card">
+          <span>当前项目</span>
+          <strong>${industry.enterprise}</strong>
+          <em>${industry.title}</em>
+        </div>
+        <nav>${navHtml}</nav>
+        <div class="side-note">MVP 结果用于筛查和优先级排序，不代表实际财务损失概率。</div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <div>
+            <div class="crumb">WaterPulse / ${currentNav[2]}</div>
+            <h1>${currentNav[2]}</h1>
+          </div>
+          <div class="header-actions">
+            ${badge(industry.sourceVersion, "teal")}
+            ${badge(state.uploadedNodes ? "用户数据" : "示例数据", state.uploadedNodes ? "amber" : "green")}
+          </div>
+        </header>
+        ${PAGES[page] ? PAGES[page]() : homePage()}
+      </main>
+    </div>`;
+  attachEvents();
 }
 
 render();

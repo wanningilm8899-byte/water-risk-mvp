@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WaterPulse · 中粮糖业甘蔗供应链水风险诊断报告</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --ink: #102528;
+      --muted: #61757a;
+      --line: #dce7e4;
+      --wash: #f6f9f7;
+      --teal: #087f75;
+      --green: #2f9461;
+      --amber: #c67c1c;
+      --red: #bf4436;
+      --teal-soft: #e2f4f1;
+      --amber-soft: #fff0d5;
+      --red-soft: #fee7e2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--wash);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 28px auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 42px rgba(16, 37, 40, 0.08);
+      overflow: hidden;
+    }
+    header {
+      padding: 34px 38px 28px;
+      background: linear-gradient(135deg, rgba(8,127,117,0.14), rgba(198,124,28,0.08)), #fff;
+      border-bottom: 1px solid var(--line);
+    }
+    .kicker {
+      color: var(--teal);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    h1, h2, h3 { margin: 0; letter-spacing: 0; }
+    h1 {
+      font-size: 34px;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+    h2 {
+      font-size: 22px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    h3 {
+      font-size: 17px;
+      margin-bottom: 8px;
+    }
+    p {
+      margin: 8px 0;
+      color: #42575c;
+      line-height: 1.7;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .meta span, .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #eef4f2;
+      color: #52686c;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .badge.teal { color: var(--teal); background: var(--teal-soft); }
+    .badge.amber { color: var(--amber); background: var(--amber-soft); }
+    .badge.red { color: var(--red); background: var(--red-soft); }
+    .badge.green { color: var(--green); background: #e7f4eb; }
+    main {
+      padding: 32px 38px 40px;
+    }
+    section {
+      margin-bottom: 30px;
+      break-inside: avoid;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .metric {
+      min-height: 118px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--teal);
+      border-radius: 8px;
+      background: #fbfdfc;
+    }
+    .metric.red { border-left-color: var(--red); }
+    .metric.amber { border-left-color: var(--amber); }
+    .metric.green { border-left-color: var(--green); }
+    .metric strong {
+      display: block;
+      margin: 8px 0;
+      font-size: 25px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px 9px;
+      border-bottom: 1px solid #edf2f0;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #6c7e82;
+      font-size: 12px;
+      font-weight: 820;
+      background: #f8fbfa;
+    }
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    ul, ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+      color: #42575c;
+      line-height: 1.65;
+    }
+    li { margin: 4px 0; }
+    .callout {
+      padding: 16px;
+      border: 1px solid #efd0a2;
+      border-radius: 8px;
+      background: var(--amber-soft);
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .flow div {
+      min-height: 66px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #455a5e;
+      font-size: 12px;
+      font-weight: 780;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 18px 38px;
+      border-top: 1px solid var(--line);
+      background: #fbfdfc;
+    }
+    .button {
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .button.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+    @media (max-width: 860px) {
+      .summary, .grid, .flow { grid-template-columns: 1fr; }
+      header, main, .actions { padding-left: 18px; padding-right: 18px; }
+      h1 { font-size: 27px; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+    @media print {
+      @page { margin: 12mm 10mm; }
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; border: 0; box-shadow: none; border-radius: 0; }
+      .actions { display: none; }
+      section { margin-bottom: 22px; break-inside: auto; }
+      header { padding-top: 18px; padding-bottom: 18px; }
+      main { padding-top: 20px; }
+      .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .flow { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .metric { min-height: 88px; padding: 10px; }
+      .metric strong { font-size: 18px; }
+      .metric span { font-size: 10px; }
+      table { font-size: 10px; }
+      th, td { padding: 7px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <article class="page">
+    <header>
+      <div class="kicker">WaterPulse AI Water Risk Agent · D组正式诊断报告</div>
+      <h1>中粮糖业“制糖业 - 甘蔗”供应链水风险诊断报告</h1>
+      <p>本报告用于展示 D 组网页端 MVP 的最终诊断结果。报告严格基于 A 组行业机制、B 组基准计算和 C 组压力测试结果生成，AI 只负责结构化解释、建议匹配和数据缺口提示。</p>
+      <div class="meta">
+        <span>评估日期：2026-08-18</span>
+        <span>数据版本：ABC组8.17 v2.0</span>
+        <span>企业：中粮糖业</span>
+        <span>行业/原材料：制糖业 - 甘蔗</span>
+        <span>方法：SWEi = Ei × Wi × Ri</span>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2>一、总体结论</h2>
+        <p>基准情景下，中粮糖业甘蔗供应链总水风险敞口 SWE 为 <strong>172,012,401 m3/yr</strong>。企业管理优先级并不只由区域风险 Ri 决定，而是由采购比例 Ei、水足迹 Wi 和区域风险 Ri 共同决定。</p>
+        <p>前三大管理优先节点为 <strong>巴西圣保罗/中南部、泰国中部平原、广西崇左/江州/北海</strong>，合计贡献 <strong>97.68%</strong>。其中巴西节点因采购占比和水足迹较大成为第一贡献节点，即使其 Ri 值较低，也不能被简单判断为低优先级。</p>
+        <div class="summary">
+          <div class="metric"><span>基准总 SWE</span><strong>172,012,401</strong><span>m3/yr</span></div>
+          <div class="metric red"><span>第一贡献节点</span><strong>巴西圣保罗/中南部</strong><span>贡献度 77.55%</span></div>
+          <div class="metric amber"><span>前三节点贡献</span><strong>97.68%</strong><span>巴西 / 泰国 / 广西</span></div>
+          <div class="metric green"><span>采购比例校验</span><strong>100.00%</strong><span>B组标准化输入表</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>二、D组任务闭环</h2>
+        <p>D 组定位为系统集成组，不是单纯的大模型研究组。网页端 MVP 的流程是：上传或加载企业数据，调用 B 组计算函数，展示风险节点排名，调用 C 组压力测试函数，将 A+B+C 结果发送给 AI，再由 AI 返回结构化解释和建议。</p>
+        <div class="flow">
+          <div>1. 企业数据导入</div>
+          <div>2. B组 SWE 计算</div>
+          <div>3. 节点排名展示</div>
+          <div>4. C组压力测试</div>
+          <div>5. AI 结构化解释</div>
+          <div>6. 报告显示/下载</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>三、A组信息：行业依赖机制与措施库</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>甘蔗水依赖机制</h3>
+            <ul>
+              <li>甘蔗生长期较长，对稳定供水、土壤墒情和旱季水源保障敏感。</li>
+              <li>长期干旱会影响单产、含糖量和压榨期原料稳定性。</li>
+              <li>季节波动和洪涝会影响收割窗口、运输连续性和工厂开榨节奏。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>风险原因与管理措施</h3>
+            <ul>
+              <li>长期干旱：核实灌溉水源与旱季取水许可，建立替代产区。</li>
+              <li>基准水压力：优先复核高 Ri 节点，推动节水灌溉和供应商水管理。</li>
+              <li>单点失效：识别前 3 个贡献节点，为核心节点建立替代来源池。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>四、B组信息：基准节点风险与贡献度</h2>
+        <p>B 组计算口径为 <strong>SWEi = Ei × Wi × Ri</strong>，节点贡献度为 SWEi / SWE_total。该结果用于筛查和优先级排序，不代表实际财务损失概率。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>排名</th><th>节点</th><th>产区</th><th>采购比例 Ei</th><th>Ri</th><th>水足迹 Wi</th><th>SWEi</th><th>贡献度</th><th>置信度</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>N03</td><td>巴西圣保罗/中南部</td><td class="num">76.22%</td><td class="num">0.05</td><td class="num">3,500,000,000</td><td class="num">133,389,292</td><td class="num">77.55%</td><td>低</td></tr>
+            <tr><td>2</td><td>N04</td><td>泰国中部平原</td><td class="num">9.65%</td><td class="num">0.80</td><td class="num">360,000,000</td><td class="num">27,786,872</td><td class="num">16.15%</td><td>低</td></tr>
+            <tr><td>3</td><td>N01</td><td>广西崇左/江州/北海</td><td class="num">8.44%</td><td class="num">0.15</td><td class="num">540,000,000</td><td class="num">6,839,904</td><td class="num">3.98%</td><td>中</td></tr>
+            <tr><td>4</td><td>N02</td><td>云南梁河</td><td class="num">1.86%</td><td class="num">0.30</td><td class="num">540,000,000</td><td class="num">3,005,384</td><td class="num">1.75%</td><td>中</td></tr>
+            <tr><td>5</td><td>N06</td><td>澳大利亚昆士兰</td><td class="num">3.48%</td><td class="num">0.05</td><td class="num">550,000,000</td><td class="num">956,755</td><td class="num">0.56%</td><td>低</td></tr>
+            <tr><td>6</td><td>N05</td><td>古巴中部/西部</td><td class="num">0.35%</td><td class="num">0.15</td><td class="num">65,000,000</td><td class="num">34,195</td><td class="num">0.02%</td><td>低</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>五、C组信息：压力测试结果</h2>
+        <table>
+          <thead>
+            <tr><th>情景</th><th>参数变化</th><th>总 SWE</th><th>相对基准变化</th><th>管理含义</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>基准情景</td><td>原始 Ri、Ei、Wi</td><td class="num">172,012,401</td><td class="num">0</td><td>识别当前管理优先节点。</td></tr>
+            <tr><td>旱季供水下降</td><td>Ri × 1.2</td><td class="num">206,414,882</td><td class="num">+34,402,480</td><td>整体风险被放大，但前三节点结构基本不变。</td></tr>
+            <tr><td>极端干旱</td><td>Ri × 1.4，上限 1.0</td><td class="num">236,649,331</td><td class="num">+64,636,930</td><td>泰国 Ri 接近上限，巴西仍因采购暴露和水足迹保持第一贡献。</td></tr>
+            <tr><td>巴西节点失效</td><td>N03 SWE 置 0</td><td class="num">38,623,109</td><td class="num">-133,389,292</td><td>不能解释为风险下降；同时产生 76.22% 供应缺口，剩余风险集中到泰国。</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <strong>关键解释：</strong>
+          单点失效情景下 SWE 下降，是因为核心节点退出了当前敞口计算口径，并不意味着企业真实风险下降。D 组网页与 AI 诊断必须同步显示供应缺口，避免误导性结论。
+        </div>
+      </section>
+
+      <section>
+        <h2>六、AI 结构化诊断</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>总体诊断</h3>
+            <p>中粮糖业甘蔗供应链水风险管理优先级高度集中。巴西节点是第一贡献节点，泰国节点区域 Ri 最高，广西节点进入前三，三者共同构成 MVP 阶段的重点管理对象。</p>
+          </div>
+          <div class="card">
+            <h3>前三节点风险原因</h3>
+            <ul>
+              <li>N03 巴西：采购集中、进口补充采购占比高、单点失效影响大。</li>
+              <li>N04 泰国：基准水压力高，旱季供水下降和地下水消耗风险突出。</li>
+              <li>N01 广西：国内主产区节点，需关注长期干旱、旱季供水和汛期波动。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>短期措施</h3>
+            <ul>
+              <li>优先复核巴西、泰国、广西三个节点的采购比例和具体蔗区坐标。</li>
+              <li>对泰国节点核实水压力来源、灌溉方式和旱季供水保障。</li>
+              <li>对巴西节点建立单点失效预案，明确替代来源和供应缺口影响。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>中长期措施</h3>
+            <ul>
+              <li>建立跨产区采购组合管理机制，避免对单一进口来源过度依赖。</li>
+              <li>将供应商水管理、节水灌溉和旱涝监测纳入采购审查。</li>
+              <li>后续新增行业时复用同一数据结构：机制库、节点表、计算函数、情景函数、AI 诊断字段。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>七、数据缺口与置信度</h2>
+        <ul>
+          <li>海外进口原糖四国产区采购占比为 B 组工作假设，需用企业真实采购台账复核。</li>
+          <li>BWS 数值为 WRI Aqueduct 4.0 公开数据的流域/省级代理估算，需后续按具体蔗区坐标查询。</li>
+          <li>水足迹和产量口径来自公开数据和文献估算，后续应补充供应商级取水、灌溉和产量数据。</li>
+          <li>本报告结论仅用于筛查、排序和管理优先级识别，不构成损失概率或财务预测。</li>
+        </ul>
+      </section>
+    </main>
+
+    <div class="actions">
+      <a class="button" href="agent-analysis.html">返回 AI 诊断页</a>
+      <a class="button primary" href="waterpulse-sugarcane-diagnosis-report.pdf">下载 PDF 文件</a>
+      <button class="button primary" onclick="window.print()">打印 / 另存为 PDF</button>
+    </div>
+  </article>
+</body>
+</html>
