@@ -942,9 +942,13 @@ th {
 .map-node.green { color: var(--green); }
 
 .map-node span {
-  font-size: 11px;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  font-size: 10px;
   font-weight: 900;
   color: currentColor;
+  line-height: 1;
+  text-align: center;
 }
 
 .map-node em {
@@ -1027,8 +1031,8 @@ th {
 
 .point {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border: 3px solid currentColor;
@@ -1044,14 +1048,41 @@ th {
 
 .point em {
   position: absolute;
-  left: 27px;
-  top: -3px;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
   min-width: 100px;
   color: #5b6d71;
-  font-size: 11px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 760;
   white-space: nowrap;
+  pointer-events: none;
+}
+
+.point.label-left em {
+  left: auto;
+  right: calc(100% + 10px);
+  text-align: right;
+}
+
+.point.label-above em {
+  left: 50%;
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.point.label-below em {
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.point.label-right em {
+  left: calc(100% + 10px);
 }
 
 .x-label,

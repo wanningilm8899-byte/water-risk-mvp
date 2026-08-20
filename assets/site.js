@@ -404,13 +404,29 @@ function evidenceDetails(label, innerHtml) {
 function mapLabelClass(node) {
   const placements = {
     N01: "label-above",
-    N02: "label-below",
+    N02: "label-left",
     N03: "label-right",
     N04: "label-right",
     N05: "label-left",
-    N06: "label-left"
+    N06: "label-above"
   };
   return placements[node.id] || "label-right";
+}
+
+function quadrantPlacement(node) {
+  const positions = {
+    N01: { left: 18, bottom: 24, label: "label-above" },
+    N02: { left: 12, bottom: 36, label: "label-right" },
+    N03: { left: 82, bottom: 16, label: "label-left" },
+    N04: { left: 20, bottom: 76, label: "label-right" },
+    N05: { left: 10, bottom: 22, label: "label-left" },
+    N06: { left: 14, bottom: 12, label: "label-right" }
+  };
+  return positions[node.id] || {
+    left: clamp(8 + node.purchaseShare * 86, 6, 88),
+    bottom: clamp(8 + node.riskR * 84, 8, 86),
+    label: "label-right"
+  };
 }
 
 function industrySelector() {
@@ -590,7 +606,7 @@ function mapPage() {
         <div class="map-canvas">
           <div class="map-gridline"></div>
           ${rows.map((node) => {
-            const size = 18 + (node.purchaseShare / maxShare) * 34;
+            const size = 32 + (node.purchaseShare / maxShare) * 34;
             const tone = toneForPriority(node.rank);
             return `<button class="map-node ${tone} ${mapLabelClass(node)}" style="left:${node.map[0]}%;top:${node.map[1]}%;width:${size}px;height:${size}px" title="${node.area}">
               <span>${node.id}</span><em>${node.area}</em>
@@ -628,7 +644,10 @@ function riskPage() {
           <p><strong>广西</strong>：国内主产区进入前三，需要做旱季和汛期监测。</p>
         </div>
         ${evidenceDetails("查看双维度图", `<div class="quadrant">
-          ${base.rows.map((node) => `<span class="point ${toneForPriority(node.rank)}" style="left:${8 + node.purchaseShare * 86}%;bottom:${8 + node.riskR * 84}%">${node.id}<em>${node.area}</em></span>`).join("")}
+          ${base.rows.map((node) => {
+            const placement = quadrantPlacement(node);
+            return `<span class="point ${toneForPriority(node.rank)} ${placement.label}" style="left:${placement.left}%;bottom:${placement.bottom}%">${node.id}<em>${node.area}</em></span>`;
+          }).join("")}
           <label class="x-label">企业采购占比</label><label class="y-label">区域风险 Ri</label>
         </div>`)}
       </div>

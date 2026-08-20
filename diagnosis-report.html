@@ -94,7 +94,8 @@
     }
     section {
       margin-bottom: 30px;
-      break-inside: avoid;
+      break-inside: avoid-page;
+      page-break-inside: avoid;
     }
     .summary {
       display: grid;
@@ -129,12 +130,16 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 18px;
+      break-inside: avoid-page;
+      page-break-inside: avoid;
     }
     .card {
       padding: 16px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fbfdfc;
+      break-inside: avoid-page;
+      page-break-inside: avoid;
     }
     table {
       width: 100%;
@@ -172,12 +177,16 @@
       border: 1px solid #efd0a2;
       border-radius: 8px;
       background: var(--amber-soft);
+      break-inside: avoid-page;
+      page-break-inside: avoid;
     }
     .flow {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 8px;
       margin-top: 12px;
+      break-inside: avoid-page;
+      page-break-inside: avoid;
     }
     .flow div {
       min-height: 66px;
@@ -224,7 +233,7 @@
       body { background: #fff; }
       .page { width: 100%; margin: 0; border: 0; box-shadow: none; border-radius: 0; }
       .actions { display: none; }
-      section { margin-bottom: 22px; break-inside: auto; }
+      section { margin-bottom: 20px; break-inside: avoid-page; page-break-inside: avoid; }
       header { padding-top: 18px; padding-bottom: 18px; }
       main { padding-top: 20px; }
       .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -235,6 +244,10 @@
       .metric span { font-size: 10px; }
       table { font-size: 10px; }
       th, td { padding: 7px 6px; }
+      .card, .grid, .flow, .callout, .metric {
+        break-inside: avoid-page;
+        page-break-inside: avoid;
+      }
     }
   </style>
 </head>
