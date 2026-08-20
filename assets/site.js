@@ -1,5 +1,5 @@
 const NAV = [
-  ["0", "⌂", "管理总览", "index.html", "home"],
+  ["0", "⌂", "平台简介", "index.html", "home"],
   ["1", "↥", "导入数据", "data-import.html", "import"],
   ["2", "◉", "行业画像", "data-library.html", "library"],
   ["3", "▱", "供应链位置", "supply-map.html", "map"],
@@ -403,14 +403,26 @@ function evidenceDetails(label, innerHtml) {
 
 function mapLabelClass(node) {
   const placements = {
-    N01: "label-above",
+    N01: "label-right",
     N02: "label-left",
     N03: "label-right",
     N04: "label-right",
-    N05: "label-left",
-    N06: "label-above"
+    N05: "label-right",
+    N06: "label-left"
   };
   return placements[node.id] || "label-right";
+}
+
+function mapPosition(node) {
+  const positions = {
+    N01: [37, 43],
+    N02: [34, 55],
+    N03: [23, 72],
+    N04: [58, 56],
+    N05: [26, 34],
+    N06: [73, 78]
+  };
+  return positions[node.id] || node.map || [50, 50];
 }
 
 function quadrantPlacement(node) {
@@ -474,31 +486,38 @@ function progress(active) {
 
 function homePage() {
   const industry = activeIndustry();
-  const base = calcSummary(activeNodes());
-  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
-  const stressed = calcSummary(activeNodes(), scenario);
-  const verdict = userVerdict(base, scenario, stressed);
 
   return `
     ${industrySelector()}
-    <section class="panel hero-panel executive">
-      <div class="kicker">${industry.enterprise} · ${industry.title}</div>
-      <h2>${verdict.headline}</h2>
-      <p>${verdict.body}</p>
+    <section class="panel intro-hero">
+      <div class="kicker">WaterPulse · 供应链水风险诊断工具</div>
+      <h2>把企业原材料供应链数据，转成可阅读、可比较、可下载的水风险诊断结果。</h2>
+      <p>本网站用于帮助企业识别重点供应节点，查看不同情景下的风险变化，并生成面向管理层的建议和诊断报告。当前已接入 ${industry.enterprise}「${industry.title}」示例，后续可继续扩展其他行业。</p>
       <div class="button-row">
-        <a class="button primary" href="agent-analysis.html">查看 AI 建议</a>
-        <a class="button" href="diagnosis-report.html">打开诊断报告</a>
+        <a class="button primary" href="data-import.html">开始导入数据</a>
+        <a class="button" href="diagnosis-report.html">查看示例报告</a>
       </div>
     </section>
     <section class="grid two">
       <div class="panel">
-        <h3>今天先看这三个节点</h3>
-        ${priorityCards(base.rows)}
-        ${evidenceDetails("查看排序依据", rowsTable(base.rows, true))}
+        <h3>这个网站可以做什么</h3>
+        <div class="feature-list">
+          <article><strong>录入供应链节点</strong><p>可以选择已有产区模板，也可以手动填写采购比例、水足迹、区域水风险等信息，还支持上传 CSV 文件。</p></article>
+          <article><strong>识别优先管理节点</strong><p>系统会根据采购暴露、水足迹和区域水风险，给出需要优先关注的供应节点。</p></article>
+          <article><strong>查看情景变化</strong><p>可以切换旱季供水下降、极端干旱、供应节点失效等情景，比较风险敞口和供应缺口变化。</p></article>
+          <article><strong>生成建议和报告</strong><p>根据节点风险原因生成管理建议，并提供网页报告和 PDF 下载。</p></article>
+        </div>
       </div>
       <div class="panel">
-        <h3>建议动作</h3>
-        ${actionCards(base)}
+        <h3>建议操作顺序</h3>
+        <div class="guide-steps">
+          <a href="data-import.html"><span>1</span><strong>导入数据</strong><em>选择模板、手动填写或上传文件</em></a>
+          <a href="supply-map.html"><span>2</span><strong>查看位置</strong><em>确认节点位置与产区匹配情况</em></a>
+          <a href="risk-exposure.html"><span>3</span><strong>看优先节点</strong><em>识别最需要管理的供应节点</em></a>
+          <a href="stress-test.html"><span>4</span><strong>切换情景</strong><em>比较不同情景下的风险变化</em></a>
+          <a href="agent-analysis.html"><span>5</span><strong>查看 AI 建议</strong><em>获得管理措施与数据缺口提示</em></a>
+          <a href="report-export.html"><span>6</span><strong>下载报告</strong><em>输出正式诊断结果</em></a>
+        </div>
       </div>
     </section>`;
 }
@@ -506,14 +525,78 @@ function homePage() {
 function importPage() {
   const industry = activeIndustry();
   const rows = calcSummary(activeNodes()).rows;
-  const usingUpload = Boolean(state.uploadedNodes);
+  const presets = industry.nodes;
 
   return `
-    <section class="grid two">
+    <section class="grid import-layout">
       <div class="panel">
-        <h3>选择数据来源</h3>
-        <p class="lead-small">演示时可直接使用示例数据；企业试用时上传一张节点表即可。</p>
-        <div class="upload-box">
+        <h3>填写或选择节点数据</h3>
+        <p class="lead-small">能从行业样本中确定的信息可以直接选择；企业自己的采购比例、具体位置或补充说明可以手动填写。</p>
+        <div class="manual-form">
+          <label>产区模板</label>
+          <select id="presetNode">
+            <option value="">自定义节点</option>
+            ${presets.map((node) => `<option value="${node.id}">${node.area}</option>`).join("")}
+          </select>
+
+          <label>原材料</label>
+          <select id="manualMaterial">
+            <option value="甘蔗">甘蔗</option>
+            <option value="甘蔗(原糖)">甘蔗(原糖)</option>
+          </select>
+
+          <label>产区/供应商</label>
+          <input id="manualArea" type="text" placeholder="例如：广西崇左/江州/北海" />
+
+          <label>精确位置</label>
+          <input id="manualLocation" type="text" placeholder="可填写市县、蔗区或供应商地址" />
+
+          <label>采购比例</label>
+          <input id="manualShare" type="number" min="0" max="100" step="0.01" placeholder="例如：25，表示 25%" />
+
+          <label>水足迹 W</label>
+          <select id="manualWater">
+            <option value="540000000">540,000,000 m3/yr</option>
+            <option value="3500000000">3,500,000,000 m3/yr</option>
+            <option value="360000000">360,000,000 m3/yr</option>
+            <option value="550000000">550,000,000 m3/yr</option>
+            <option value="65000000">65,000,000 m3/yr</option>
+            <option value="custom">手动输入</option>
+          </select>
+
+          <label>自定义 W</label>
+          <input id="manualWaterCustom" type="number" min="0" step="1" placeholder="无法选择时填写" />
+
+          <label>区域水风险 Ri</label>
+          <select id="manualRisk">
+            <option value="0.05">0.05</option>
+            <option value="0.15">0.15</option>
+            <option value="0.3">0.30</option>
+            <option value="0.8">0.80</option>
+            <option value="custom">手动输入</option>
+          </select>
+
+          <label>自定义 Ri</label>
+          <input id="manualRiskCustom" type="number" min="0" max="1" step="0.01" placeholder="0-1 之间" />
+
+          <label>置信度</label>
+          <select id="manualConfidence">
+            <option value="中">中</option>
+            <option value="低">低</option>
+            <option value="高">高</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button class="button primary" id="addManualNodeBtn">添加节点</button>
+          <button class="button" id="clearManualNodesBtn">清空录入</button>
+          <button class="button" id="useSampleBtn">使用示例数据</button>
+        </div>
+        <div id="manualStatus" class="notice"></div>
+      </div>
+      <div class="panel">
+        <h3>从文件导入</h3>
+        <p class="lead-small">如果已经整理好节点表，可以直接上传 CSV；上传后会替换当前手动录入的数据。</p>
+        <div class="upload-box compact-upload">
           <input id="csvInput" type="file" accept=".csv,text/csv" />
           <div>
             <strong>上传 CSV 企业节点表</strong>
@@ -521,12 +604,10 @@ function importPage() {
           </div>
         </div>
         <div class="button-row">
-          <button class="button primary" id="useSampleBtn">使用示例数据</button>
           <button class="button" id="downloadTemplateBtn">下载 CSV 模板</button>
         </div>
         <div id="uploadStatus" class="notice"></div>
-      </div>
-      <div class="panel">
+        <hr class="soft-divider" />
         <h3>当前数据状态</h3>
         ${validationPanel(activeNodes())}
         ${evidenceDetails("查看需要的字段", `<div class="field-cloud">${industry.requiredFields.map((field) => badge(field, "gray")).join("")}</div>`)}
@@ -608,7 +689,8 @@ function mapPage() {
           ${rows.map((node) => {
             const size = 32 + (node.purchaseShare / maxShare) * 34;
             const tone = toneForPriority(node.rank);
-            return `<button class="map-node ${tone} ${mapLabelClass(node)}" style="left:${node.map[0]}%;top:${node.map[1]}%;width:${size}px;height:${size}px" title="${node.area}">
+            const position = mapPosition(node);
+            return `<button class="map-node ${tone} ${mapLabelClass(node)}" style="left:${position[0]}%;top:${position[1]}%;width:${size}px;height:${size}px" title="${node.area}">
               <span>${node.id}</span><em>${node.area}</em>
             </button>`;
           }).join("")}
@@ -837,6 +919,81 @@ function parseCsv(text) {
   }).filter((node) => node.purchaseShare > 0 && node.waterFootprint > 0);
 }
 
+function setFieldValue(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.value = value ?? "";
+}
+
+function selectedPresetNode() {
+  const presetId = document.getElementById("presetNode")?.value;
+  return activeIndustry().nodes.find((node) => node.id === presetId);
+}
+
+function fillManualFormFromPreset() {
+  const node = selectedPresetNode();
+  if (!node) return;
+  setFieldValue("manualMaterial", node.material);
+  setFieldValue("manualArea", node.area);
+  setFieldValue("manualLocation", node.preciseLocation);
+  setFieldValue("manualShare", Number((node.purchaseShare * 100).toFixed(2)));
+  setFieldValue("manualWater", String(node.waterFootprint));
+  setFieldValue("manualWaterCustom", "");
+  setFieldValue("manualRisk", String(node.riskR));
+  setFieldValue("manualRiskCustom", "");
+  setFieldValue("manualConfidence", node.confidence);
+}
+
+function readNumberField(id) {
+  const value = Number(document.getElementById(id)?.value || 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function addManualNode() {
+  const preset = selectedPresetNode();
+  const area = document.getElementById("manualArea")?.value.trim();
+  const purchaseInput = readNumberField("manualShare");
+  const waterMode = document.getElementById("manualWater")?.value;
+  const riskMode = document.getElementById("manualRisk")?.value;
+  const waterFootprint = waterMode === "custom" ? readNumberField("manualWaterCustom") : Number(waterMode || 0);
+  const riskR = riskMode === "custom" ? readNumberField("manualRiskCustom") : Number(riskMode || 0);
+  const status = document.getElementById("manualStatus");
+
+  if (!area || purchaseInput <= 0 || waterFootprint <= 0 || riskR <= 0) {
+    if (status) status.textContent = "请至少补充产区、采购比例、水足迹和区域水风险。";
+    return;
+  }
+
+  const existing = state.uploadedNodes && state.uploadedNodes.length ? [...state.uploadedNodes] : [];
+  const id = preset?.id || `U${String(existing.length + 1).padStart(2, "0")}`;
+  const nextNode = {
+    ...(preset || {}),
+    id,
+    material: document.getElementById("manualMaterial")?.value || preset?.material || "甘蔗",
+    supplier: area,
+    area,
+    preciseLocation: document.getElementById("manualLocation")?.value.trim() || area,
+    purchaseShare: purchaseInput > 1 ? purchaseInput / 100 : purchaseInput,
+    waterFootprint,
+    riskR: clamp(riskR, 0, 1),
+    regionRisk: preset?.regionRisk || "待定",
+    confidence: document.getElementById("manualConfidence")?.value || "中",
+    dataNature: preset ? "模板选择后补充" : "手动录入",
+    sources: "企业填写",
+    drivers: preset?.drivers || ["长期干旱与旱季供水下降", "基准水压力"],
+    map: preset?.map || [42, 50],
+    production: preset?.production || 0,
+    productionYear: preset?.productionYear || ""
+  };
+
+  const index = existing.findIndex((node) => node.id === id);
+  if (index >= 0) existing[index] = nextNode;
+  else existing.push(nextNode);
+
+  state.uploadedNodes = existing;
+  localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(existing));
+  render();
+}
+
 function attachEvents() {
   document.querySelectorAll("[data-industry]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -867,6 +1024,22 @@ function attachEvents() {
       const normalized = nodes.map((node) => ({ ...node, purchaseShare: node.purchaseShare / total }));
       state.uploadedNodes = normalized;
       localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
+      render();
+    });
+  }
+  const presetNode = document.getElementById("presetNode");
+  if (presetNode) {
+    presetNode.addEventListener("change", fillManualFormFromPreset);
+  }
+  const addManualNodeBtn = document.getElementById("addManualNodeBtn");
+  if (addManualNodeBtn) {
+    addManualNodeBtn.addEventListener("click", addManualNode);
+  }
+  const clearManualNodesBtn = document.getElementById("clearManualNodesBtn");
+  if (clearManualNodesBtn) {
+    clearManualNodesBtn.addEventListener("click", () => {
+      state.uploadedNodes = null;
+      localStorage.removeItem("waterpulse.uploadedNodes");
       render();
     });
   }
@@ -921,7 +1094,7 @@ const PAGES = {
 function render() {
   const page = document.body.dataset.page || "home";
   const industry = activeIndustry();
-  const currentNav = NAV.find((item) => item[4] === page) || ["", ...(PAGE_META[page] || ["⌂", "管理总览"]), "index.html", page];
+  const currentNav = NAV.find((item) => item[4] === page) || ["", ...(PAGE_META[page] || ["⌂", "平台简介"]), "index.html", page];
   const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
   document.getElementById("app").innerHTML = `
     <div class="app-shell">
