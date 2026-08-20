@@ -87,35 +87,6 @@ a {
   text-transform: uppercase;
 }
 
-.project-card {
-  padding: 15px;
-  margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.project-card span {
-  display: block;
-  color: #85b4af;
-  font-size: 12px;
-  font-weight: 760;
-  margin-bottom: 6px;
-}
-
-.project-card strong {
-  display: block;
-  color: #ffffff;
-  font-size: 18px;
-  margin-bottom: 4px;
-}
-
-.project-card em {
-  color: #afd0cc;
-  font-style: normal;
-  font-size: 13px;
-}
-
 .nav-item {
   display: grid;
   grid-template-columns: 26px 1fr;
@@ -1387,7 +1358,6 @@ pre {
     margin-bottom: 12px;
   }
 
-  .project-card,
   .side-note {
     display: none;
   }

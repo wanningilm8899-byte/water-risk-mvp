@@ -1071,11 +1071,6 @@ function render() {
     <div class="app-shell">
       <aside class="sidebar">
         <a class="logo" href="index.html"><span class="logo-mark"></span><span><strong>WaterPulse</strong><em>AI Water Risk Agent</em></span></a>
-        <div class="project-card">
-          <span>当前项目</span>
-          <strong>${industry.enterprise}</strong>
-          <em>${industry.title}</em>
-        </div>
         <nav>${navHtml}</nav>
         <div class="side-note">结果用于筛查和优先级排序，不代表实际财务损失概率。</div>
       </aside>
