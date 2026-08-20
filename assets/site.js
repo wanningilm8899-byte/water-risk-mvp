@@ -2,10 +2,11 @@ const NAV = [
   ["0", "⌂", "管理总览", "index.html", "home"],
   ["1", "↥", "导入数据", "data-import.html", "import"],
   ["2", "◉", "行业画像", "data-library.html", "library"],
-  ["3", "◌", "优先节点", "risk-exposure.html", "risk"],
-  ["4", "☁", "情景影响", "stress-test.html", "stress"],
-  ["5", "☷", "AI 建议", "agent-analysis.html", "agent"],
-  ["6", "▤", "报告下载", "report-export.html", "report"]
+  ["3", "▱", "供应链位置", "supply-map.html", "map"],
+  ["4", "◌", "优先节点", "risk-exposure.html", "risk"],
+  ["5", "☁", "情景影响", "stress-test.html", "stress"],
+  ["6", "☷", "AI 建议", "agent-analysis.html", "agent"],
+  ["7", "▤", "报告下载", "report-export.html", "report"]
 ];
 
 const PAGE_META = {
