@@ -4,7 +4,7 @@ const NAV = [
   ["2", "◉", "行业画像", "data-library.html", "library"],
   ["3", "▱", "供应链位置", "supply-map.html", "map"],
   ["4", "◌", "优先节点", "risk-exposure.html", "risk"],
-  ["5", "☁", "情景影响", "stress-test.html", "stress"],
+  ["5", "☁", "压力测试", "stress-test.html", "stress"],
   ["6", "☷", "AI 建议", "agent-analysis.html", "agent"],
   ["7", "▤", "报告下载", "report-export.html", "report"]
 ];
@@ -186,17 +186,6 @@ const INDUSTRY_CATALOG = {
         description: "巴西节点供应能力暂时失效，当前口径下该节点 SWE 置 0，同时记录供应缺口。",
         mode: "nodeFailure",
         failedNodeId: "N03"
-      },
-      {
-        id: "shift10",
-        name: "采购调整模板",
-        shortName: "N03 → N06 10%",
-        description: "扩展模板：将第一贡献节点 10% 采购占比转移到低风险备选节点，用于后续 C 组采购调整情景。",
-        mode: "purchaseShift",
-        fromNodeId: "N03",
-        toNodeId: "N06",
-        shiftShare: 0.1,
-        experimental: true
       }
     ]
   },
@@ -260,17 +249,6 @@ function calcRows(nodes, scenario = null) {
       scenarioFailed: node.id === scenario.failedNodeId,
       scenarioNote: node.id === scenario.failedNodeId ? "节点失效" : "剩余供应"
     }));
-  } else if (scenario?.mode === "purchaseShift") {
-    working = working.map((node) => ({ ...node, scenarioRiskR: node.riskR }));
-    const from = working.find((node) => node.id === scenario.fromNodeId);
-    const to = working.find((node) => node.id === scenario.toNodeId);
-    if (from && to) {
-      const shifted = Math.min(from.purchaseShare, scenario.shiftShare);
-      from.purchaseShare -= shifted;
-      to.purchaseShare += shifted;
-      from.scenarioNote = `转出 ${formatPercent(shifted, 1)}`;
-      to.scenarioNote = `转入 ${formatPercent(shifted, 1)}`;
-    }
   }
 
   working = working.map((node) => {
@@ -514,7 +492,7 @@ function homePage() {
           <a href="data-import.html"><span>1</span><strong>导入数据</strong><em>选择模板、手动填写或上传文件</em></a>
           <a href="supply-map.html"><span>2</span><strong>查看位置</strong><em>确认节点位置与产区匹配情况</em></a>
           <a href="risk-exposure.html"><span>3</span><strong>看优先节点</strong><em>识别最需要管理的供应节点</em></a>
-          <a href="stress-test.html"><span>4</span><strong>切换情景</strong><em>比较不同情景下的风险变化</em></a>
+          <a href="stress-test.html"><span>4</span><strong>压力测试</strong><em>比较三类压力情景下的风险变化</em></a>
           <a href="agent-analysis.html"><span>5</span><strong>查看 AI 建议</strong><em>获得管理措施与数据缺口提示</em></a>
           <a href="report-export.html"><span>6</span><strong>下载报告</strong><em>输出正式诊断结果</em></a>
         </div>
@@ -616,7 +594,7 @@ function importPage() {
     <section class="panel">
       <h3>导入后会得到什么</h3>
       <div class="outcome-strip">
-        <span>优先节点</span><span>情景影响</span><span>AI 建议</span><span>诊断报告</span>
+        <span>优先节点</span><span>压力测试</span><span>AI 建议</span><span>诊断报告</span>
       </div>
       ${evidenceDetails("查看节点预览", rowsTable(rows))}
     </section>`;
@@ -746,10 +724,10 @@ function stressPage() {
   return `
     <section class="panel">
       <div class="section-head">
-        <h3>选择一个管理问题</h3>
+        <h3>选择一个压力测试情景</h3>
         <div class="segmented">
           ${industry.scenarios.map((item) => `<button class="${item.id === scenario.id ? "active" : ""}" data-scenario="${item.id}">
-            ${item.name}${item.experimental ? "<small>扩展</small>" : ""}
+            ${item.name}
           </button>`).join("")}
         </div>
       </div>
@@ -885,7 +863,7 @@ function reportPage() {
         <h3>报告里包含什么</h3>
         <div class="plain-answer">
           <p>一页管理结论。</p>
-          <p>A/B/C 组依据和数据缺口。</p>
+          <p>优先节点、压力测试结果和数据缺口。</p>
           <p>短期与中长期管理建议。</p>
         </div>
       </div>
