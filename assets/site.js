@@ -22,7 +22,7 @@ const INDUSTRY_CATALOG = {
     enterprise: "中粮糖业",
     subtitle: "上游甘蔗与进口原糖供应链水风险筛查",
     assessmentDate: "2026-08-18",
-    sourceVersion: "ABC组8.17 v2.0",
+    sourceVersion: "数据版本 v2.0",
     method: "SWEi = Ei × Wi × Ri",
     requiredFields: ["节点编号", "产区/供应商", "精确位置", "采购比例(E)", "水足迹W", "BWS系数R", "置信度"],
     mechanisms: [
@@ -65,7 +65,7 @@ const INDUSTRY_CATALOG = {
         riskR: 0.15,
         regionRisk: "低",
         confidence: "中",
-        dataNature: "A组直接给出",
+        dataNature: "企业产区数据",
         sources: "中国国家统计局/人民网；WRI Aqueduct 4.0；Mekonnen & Hoekstra (2011)",
         drivers: ["长期干旱与旱季供水下降", "季节波动与洪涝", "灌溉水源稳定性"],
         map: [38, 55]
@@ -83,7 +83,7 @@ const INDUSTRY_CATALOG = {
         riskR: 0.3,
         regionRisk: "低",
         confidence: "中",
-        dataNature: "A组直接给出",
+        dataNature: "企业产区数据",
         sources: "中国国家统计局/人民网；WRI Aqueduct 4.0；Mekonnen & Hoekstra (2011)",
         drivers: ["长期干旱与旱季供水下降", "季节波动与洪涝"],
         map: [34, 60]
@@ -101,8 +101,8 @@ const INDUSTRY_CATALOG = {
         riskR: 0.05,
         regionRisk: "高",
         confidence: "低",
-        dataNature: "B组进口拆分假设",
-        sources: "FAOSTAT；WRI Aqueduct 4.0；A组数据；Mekonnen & Hoekstra (2011)",
+        dataNature: "进口采购拆分估算",
+        sources: "FAOSTAT；WRI Aqueduct 4.0；企业产区数据；Mekonnen & Hoekstra (2011)",
         drivers: ["采购集中与单点失效", "季节波动与洪涝", "进口补充采购占比高"],
         map: [22, 72]
       },
@@ -119,7 +119,7 @@ const INDUSTRY_CATALOG = {
         riskR: 0.8,
         regionRisk: "中",
         confidence: "低",
-        dataNature: "B组进口拆分假设",
+        dataNature: "进口采购拆分估算",
         sources: "FAOSTAT；中国糖业协会；泰国甘蔗糖业局；WRI Aqueduct 4.0",
         drivers: ["基准水压力", "长期干旱与旱季供水下降", "地下水消耗"],
         map: [58, 62]
@@ -137,7 +137,7 @@ const INDUSTRY_CATALOG = {
         riskR: 0.15,
         regionRisk: "低",
         confidence: "低",
-        dataNature: "B组进口拆分假设",
+        dataNature: "进口采购拆分估算",
         sources: "USDA FAS；文献估算；WRI Aqueduct 4.0",
         drivers: ["季节波动与洪涝", "部分灌溉依赖"],
         map: [28, 46]
@@ -155,7 +155,7 @@ const INDUSTRY_CATALOG = {
         riskR: 0.05,
         regionRisk: "低",
         confidence: "低",
-        dataNature: "B组进口拆分假设",
+        dataNature: "进口采购拆分估算",
         sources: "FAOSTAT；Canegrowers Australia；WRI Aqueduct 4.0",
         drivers: ["灌溉水源稳定性", "季节波动与洪涝"],
         map: [72, 78]
@@ -401,6 +401,18 @@ function evidenceDetails(label, innerHtml) {
   return `<details class="evidence"><summary>${label}</summary>${innerHtml}</details>`;
 }
 
+function mapLabelClass(node) {
+  const placements = {
+    N01: "label-above",
+    N02: "label-below",
+    N03: "label-right",
+    N04: "label-right",
+    N05: "label-left",
+    N06: "label-left"
+  };
+  return placements[node.id] || "label-right";
+}
+
 function industrySelector() {
   return `<div class="industry-switcher">${Object.entries(INDUSTRY_CATALOG).map(([key, item]) => {
     const active = key === state.industryKey && item.status === "active";
@@ -580,7 +592,7 @@ function mapPage() {
           ${rows.map((node) => {
             const size = 18 + (node.purchaseShare / maxShare) * 34;
             const tone = toneForPriority(node.rank);
-            return `<button class="map-node ${tone}" style="left:${node.map[0]}%;top:${node.map[1]}%;width:${size}px;height:${size}px" title="${node.area}">
+            return `<button class="map-node ${tone} ${mapLabelClass(node)}" style="left:${node.map[0]}%;top:${node.map[1]}%;width:${size}px;height:${size}px" title="${node.area}">
               <span>${node.id}</span><em>${node.area}</em>
             </button>`;
           }).join("")}
@@ -695,8 +707,8 @@ function agentPage() {
       <div class="panel">
         <h3>建议先做的 3 件事</h3>
         ${actionCards(base)}
-        ${evidenceDetails("查看 AI 输入边界", `<div class="guardrail-grid">
-          ${["只总结 A/B/C 输入", "不编造风险指标", "不自行计算 SWE", "不改变 B 组排名", "不假设采购比例", "不解释为损失概率"].map((item, index) => `<div class="${index === 0 ? "ok" : ""}">${item}</div>`).join("")}
+        ${evidenceDetails("查看诊断原则", `<div class="guardrail-grid">
+          ${["只基于已导入数据", "不编造风险指标", "不自行改写计算结果", "不改变节点优先级", "不假设采购比例", "不解释为损失概率"].map((item, index) => `<div class="${index === 0 ? "ok" : ""}">${item}</div>`).join("")}
         </div>`)}
       </div>
     </section>`;
@@ -717,7 +729,7 @@ function buildDiagnosis(base, stressed, scenario) {
     { title: "情景对比", body: `${scenario.name}下总 SWE 为 ${formatNumber(stressed.total)}，相对基准${scenarioDelta >= 0 ? "增加" : "减少"} ${formatNumber(Math.abs(scenarioDelta))}。` },
     { title: "短期管理措施", body: nodeAdvice.slice(0, 2).join(" ") },
     { title: "中长期管理措施", body: "建立替代产区池、供应商水管理合作机制和坐标级水风险数据更新流程。" },
-    { title: "数据缺口与置信度", body: "进口原糖四国产区采购占比为 B 组工作假设，需用企业真实采购台账和具体蔗区坐标复核。" }
+    { title: "数据缺口与置信度", body: "进口原糖四国产区采购占比为当前估算口径，需用企业真实采购台账和具体蔗区坐标复核。" }
   ];
 }
 
@@ -902,7 +914,7 @@ function render() {
           <em>${industry.title}</em>
         </div>
         <nav>${navHtml}</nav>
-        <div class="side-note">MVP 结果用于筛查和优先级排序，不代表实际财务损失概率。</div>
+        <div class="side-note">结果用于筛查和优先级排序，不代表实际财务损失概率。</div>
       </aside>
       <main>
         <header class="topbar">

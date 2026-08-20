@@ -241,12 +241,12 @@
 <body>
   <article class="page">
     <header>
-      <div class="kicker">WaterPulse AI Water Risk Agent · D组正式诊断报告</div>
+      <div class="kicker">WaterPulse AI Water Risk Agent · 正式诊断报告</div>
       <h1>中粮糖业“制糖业 - 甘蔗”供应链水风险诊断报告</h1>
-      <p>本报告用于展示 D 组网页端 MVP 的最终诊断结果。报告严格基于 A 组行业机制、B 组基准计算和 C 组压力测试结果生成，AI 只负责结构化解释、建议匹配和数据缺口提示。</p>
+      <p>本报告基于企业供应链节点、产区水风险、采购暴露和情景测试结果生成，用于识别优先管理节点、解释风险原因，并形成可执行的管理建议。</p>
       <div class="meta">
         <span>评估日期：2026-08-18</span>
-        <span>数据版本：ABC组8.17 v2.0</span>
+        <span>数据版本：2026-08-17 v2.0</span>
         <span>企业：中粮糖业</span>
         <span>行业/原材料：制糖业 - 甘蔗</span>
         <span>方法：SWEi = Ei × Wi × Ri</span>
@@ -262,25 +262,25 @@
           <div class="metric"><span>基准总 SWE</span><strong>172,012,401</strong><span>m3/yr</span></div>
           <div class="metric red"><span>第一贡献节点</span><strong>巴西圣保罗/中南部</strong><span>贡献度 77.55%</span></div>
           <div class="metric amber"><span>前三节点贡献</span><strong>97.68%</strong><span>巴西 / 泰国 / 广西</span></div>
-          <div class="metric green"><span>采购比例校验</span><strong>100.00%</strong><span>B组标准化输入表</span></div>
+          <div class="metric green"><span>采购比例校验</span><strong>100.00%</strong><span>标准化输入表</span></div>
         </div>
       </section>
 
       <section>
-        <h2>二、D组任务闭环</h2>
-        <p>D 组定位为系统集成组，不是单纯的大模型研究组。网页端 MVP 的流程是：上传或加载企业数据，调用 B 组计算函数，展示风险节点排名，调用 C 组压力测试函数，将 A+B+C 结果发送给 AI，再由 AI 返回结构化解释和建议。</p>
+        <h2>二、诊断流程</h2>
+        <p>系统先导入企业供应链节点数据，再计算各节点水风险敞口并形成优先级排序；随后切换不同情景，比较风险敞口和供应缺口变化，最后生成结构化解释、管理建议和报告文件。</p>
         <div class="flow">
           <div>1. 企业数据导入</div>
-          <div>2. B组 SWE 计算</div>
-          <div>3. 节点排名展示</div>
-          <div>4. C组压力测试</div>
-          <div>5. AI 结构化解释</div>
+          <div>2. 水风险敞口计算</div>
+          <div>3. 优先节点识别</div>
+          <div>4. 情景影响测试</div>
+          <div>5. 管理建议生成</div>
           <div>6. 报告显示/下载</div>
         </div>
       </section>
 
       <section>
-        <h2>三、A组信息：行业依赖机制与措施库</h2>
+        <h2>三、行业机制与措施库</h2>
         <div class="grid">
           <div class="card">
             <h3>甘蔗水依赖机制</h3>
@@ -302,8 +302,8 @@
       </section>
 
       <section>
-        <h2>四、B组信息：基准节点风险与贡献度</h2>
-        <p>B 组计算口径为 <strong>SWEi = Ei × Wi × Ri</strong>，节点贡献度为 SWEi / SWE_total。该结果用于筛查和优先级排序，不代表实际财务损失概率。</p>
+        <h2>四、基准节点风险与贡献度</h2>
+        <p>计算口径为 <strong>SWEi = Ei × Wi × Ri</strong>，节点贡献度为 SWEi / SWE_total。该结果用于筛查和优先级排序，不代表实际财务损失概率。</p>
         <table>
           <thead>
             <tr>
@@ -322,7 +322,7 @@
       </section>
 
       <section>
-        <h2>五、C组信息：压力测试结果</h2>
+        <h2>五、情景压力测试结果</h2>
         <table>
           <thead>
             <tr><th>情景</th><th>参数变化</th><th>总 SWE</th><th>相对基准变化</th><th>管理含义</th></tr>
@@ -336,7 +336,7 @@
         </table>
         <div class="callout">
           <strong>关键解释：</strong>
-          单点失效情景下 SWE 下降，是因为核心节点退出了当前敞口计算口径，并不意味着企业真实风险下降。D 组网页与 AI 诊断必须同步显示供应缺口，避免误导性结论。
+          单点失效情景下 SWE 下降，是因为核心节点退出了当前敞口计算口径，并不意味着企业真实风险下降。诊断结果必须同步显示供应缺口，避免误导性结论。
         </div>
       </section>
 
@@ -345,7 +345,7 @@
         <div class="grid">
           <div class="card">
             <h3>总体诊断</h3>
-            <p>中粮糖业甘蔗供应链水风险管理优先级高度集中。巴西节点是第一贡献节点，泰国节点区域 Ri 最高，广西节点进入前三，三者共同构成 MVP 阶段的重点管理对象。</p>
+            <p>中粮糖业甘蔗供应链水风险管理优先级高度集中。巴西节点是第一贡献节点，泰国节点区域 Ri 最高，广西节点进入前三，三者共同构成当前阶段的重点管理对象。</p>
           </div>
           <div class="card">
             <h3>前三节点风险原因</h3>
@@ -368,7 +368,7 @@
             <ul>
               <li>建立跨产区采购组合管理机制，避免对单一进口来源过度依赖。</li>
               <li>将供应商水管理、节水灌溉和旱涝监测纳入采购审查。</li>
-              <li>后续新增行业时复用同一数据结构：机制库、节点表、计算函数、情景函数、AI 诊断字段。</li>
+              <li>后续新增行业时复用同一数据结构：机制库、节点表、计算规则、情景规则和诊断字段。</li>
             </ul>
           </div>
         </div>
@@ -377,7 +377,7 @@
       <section>
         <h2>七、数据缺口与置信度</h2>
         <ul>
-          <li>海外进口原糖四国产区采购占比为 B 组工作假设，需用企业真实采购台账复核。</li>
+          <li>海外进口原糖四国产区采购占比为当前估算口径，需用企业真实采购台账复核。</li>
           <li>BWS 数值为 WRI Aqueduct 4.0 公开数据的流域/省级代理估算，需后续按具体蔗区坐标查询。</li>
           <li>水足迹和产量口径来自公开数据和文献估算，后续应补充供应商级取水、灌溉和产量数据。</li>
           <li>本报告结论仅用于筛查、排序和管理优先级识别，不构成损失概率或财务预测。</li>
@@ -386,7 +386,7 @@
     </main>
 
     <div class="actions">
-      <a class="button" href="agent-analysis.html">返回 AI 诊断页</a>
+      <a class="button" href="agent-analysis.html">返回 AI 建议页</a>
       <a class="button primary" href="waterpulse-sugarcane-diagnosis-report.pdf">下载 PDF 文件</a>
       <button class="button primary" onclick="window.print()">打印 / 另存为 PDF</button>
     </div>

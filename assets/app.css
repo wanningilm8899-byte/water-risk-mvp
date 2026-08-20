@@ -958,6 +958,32 @@ th {
   font-style: normal;
   font-weight: 760;
   white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-node.label-left em {
+  left: auto;
+  right: calc(100% + 8px);
+  text-align: right;
+}
+
+.map-node.label-above em {
+  left: 50%;
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.map-node.label-below em {
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.map-node.label-right em {
+  left: calc(100% + 8px);
 }
 
 .list {
