@@ -636,13 +636,6 @@ function libraryPage() {
           </div>`).join("")}
         </div>
       </div>
-    </section>
-    <section class="panel">
-      <h3>后续新增行业</h3>
-      <p class="lead-small">后续接入其他行业时，只需要补充行业机制、节点数据和情景规则，用户界面仍保持同一套决策流程。</p>
-      ${evidenceDetails("查看扩展字段", `<div class="schema-grid">
-        ${["industryId", "materialId", "mechanisms", "nodes", "scenarios", "requiredFields"].map((field) => `<div><strong>${field}</strong><span>系统配置项</span></div>`).join("")}
-      </div>`)}
     </section>`;
 }
 
