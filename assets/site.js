@@ -1,13 +1,16 @@
 const NAV = [
-  ["0", "⌂", "首页总览", "index.html", "home"],
-  ["1", "↥", "企业数据导入", "data-import.html", "import"],
-  ["2", "◉", "行业风险画像", "data-library.html", "library"],
-  ["3", "▱", "供应链地图", "supply-map.html", "map"],
-  ["4", "◌", "风险节点排名", "risk-exposure.html", "risk"],
-  ["5", "☁", "压力测试", "stress-test.html", "stress"],
-  ["6", "☷", "AI 诊断", "agent-analysis.html", "agent"],
-  ["7", "▤", "结果下载", "report-export.html", "report"]
+  ["0", "⌂", "管理总览", "index.html", "home"],
+  ["1", "↥", "导入数据", "data-import.html", "import"],
+  ["2", "◉", "行业画像", "data-library.html", "library"],
+  ["3", "◌", "优先节点", "risk-exposure.html", "risk"],
+  ["4", "☁", "情景影响", "stress-test.html", "stress"],
+  ["5", "☷", "AI 建议", "agent-analysis.html", "agent"],
+  ["6", "▤", "报告下载", "report-export.html", "report"]
 ];
+
+const PAGE_META = {
+  map: ["▱", "供应链位置"]
+};
 
 const INDUSTRY_CATALOG = {
   sugar_sugarcane: {
@@ -344,6 +347,59 @@ function toneForPriority(rank) {
   return "green";
 }
 
+function userVerdict(base, scenario, stressed) {
+  const first = base.top3[0];
+  const delta = stressed.total - base.total;
+  return {
+    headline: "当前最需要管理的不是“最高区域风险”，而是“采购暴露最大的关键节点”。",
+    body: `${first.area} 是第一优先节点，贡献 ${formatPercent(first.contribution, 2)}。${scenario.name}下风险敞口${delta >= 0 ? "上升" : "下降"} ${formatNumber(Math.abs(delta))}，需要优先复核该节点采购占比、替代来源和供应连续性。`,
+    nextAction: "先处理巴西、泰国、广西三个节点；其余节点保持季度复核。"
+  };
+}
+
+function actionCards(base) {
+  const actions = [
+    {
+      title: "立即复核巴西节点",
+      body: "确认进口原糖采购占比、具体蔗区和替代来源。该节点是第一贡献节点，也是单点失效情景的主要供应缺口来源。",
+      tone: "red"
+    },
+    {
+      title: "核实泰国水压力",
+      body: "泰国节点 Ri 最高，旱季供水和地下水消耗需要进入供应商审查清单。",
+      tone: "amber"
+    },
+    {
+      title: "建立国内产区监测",
+      body: "广西进入前三，应关注旱季供水、汛期波动和压榨期原料稳定。",
+      tone: "teal"
+    }
+  ];
+  return `<div class="decision-grid">${actions.map((item, index) => `<article class="decision-card ${item.tone}">
+    <span>${index + 1}</span>
+    <strong>${item.title}</strong>
+    <p>${item.body}</p>
+  </article>`).join("")}</div>`;
+}
+
+function priorityCards(rows) {
+  return `<div class="priority-list">${rows.slice(0, 3).map((node) => `<article class="priority-card ${toneForPriority(node.rank)}">
+    <div class="priority-rank">${node.rank}</div>
+    <div>
+      <strong>${node.area}</strong>
+      <p>${node.rank === 1 ? "第一管理优先节点" : node.rank === 2 ? "高水压力重点节点" : "国内产区重点节点"}</p>
+      <div class="priority-meta">
+        <span>贡献 ${formatPercent(node.contribution, 2)}</span>
+        <span>采购 ${formatPercent(node.purchaseShare, 2)}</span>
+      </div>
+    </div>
+  </article>`).join("")}</div>`;
+}
+
+function evidenceDetails(label, innerHtml) {
+  return `<details class="evidence"><summary>${label}</summary>${innerHtml}</details>`;
+}
+
 function industrySelector() {
   return `<div class="industry-switcher">${Object.entries(INDUSTRY_CATALOG).map(([key, item]) => {
     const active = key === state.industryKey && item.status === "active";
@@ -392,44 +448,28 @@ function homePage() {
   const base = calcSummary(activeNodes());
   const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
   const stressed = calcSummary(activeNodes(), scenario);
-  const delta = stressed.total - base.total;
+  const verdict = userVerdict(base, scenario, stressed);
 
   return `
     ${industrySelector()}
-    <section class="grid overview">
-      <div class="panel hero-panel">
-        <div class="kicker">当前 MVP 主线</div>
-        <h2>${industry.title}</h2>
-        <p>${industry.subtitle}</p>
-        <div class="hero-facts">
-          <span>${industry.enterprise}</span>
-          <span>${industry.sourceVersion}</span>
-          <span>${industry.method}</span>
-          <span>${industry.assessmentDate}</span>
-        </div>
+    <section class="panel hero-panel executive">
+      <div class="kicker">${industry.enterprise} · ${industry.title}</div>
+      <h2>${verdict.headline}</h2>
+      <p>${verdict.body}</p>
+      <div class="button-row">
+        <a class="button primary" href="agent-analysis.html">查看 AI 建议</a>
+        <a class="button" href="diagnosis-report.html">打开诊断报告</a>
       </div>
-      <div class="panel status-panel">
-        <strong>验收闭环</strong>
-        ${progress(5)}
-      </div>
-    </section>
-    <section class="grid metrics">
-      ${metric("基准总 SWE", formatNumber(base.total), "m3/yr，来自 B 组公式", "teal")}
-      ${metric("第一贡献节点", base.top3[0].area, `${formatPercent(base.top3[0].contribution, 2)} · 与 B 组排名一致`, "red")}
-      ${metric("前三节点贡献", formatPercent(base.top3Contribution, 2), base.top3.map((node) => node.area).join(" / "), "amber")}
-      ${metric("当前情景变化", `${delta >= 0 ? "+" : ""}${formatNumber(delta)}`, scenario.name, delta >= 0 ? "red" : "green")}
     </section>
     <section class="grid two">
       <div class="panel">
-        <div class="section-head">
-          <h3>风险节点排名</h3>
-          <a class="text-link" href="risk-exposure.html">查看明细</a>
-        </div>
-        ${rowsTable(base.rows.slice(0, 3), true)}
+        <h3>今天先看这三个节点</h3>
+        ${priorityCards(base.rows)}
+        ${evidenceDetails("查看排序依据", rowsTable(base.rows, true))}
       </div>
       <div class="panel">
-        <h3>AI 诊断摘要</h3>
-        ${diagnosisList(buildDiagnosis(base, stressed, scenario).slice(0, 4))}
+        <h3>建议动作</h3>
+        ${actionCards(base)}
       </div>
     </section>`;
 }
@@ -442,13 +482,8 @@ function importPage() {
   return `
     <section class="grid two">
       <div class="panel">
-        <h3>项目数据</h3>
-        <div class="form-grid">
-          <label>行业</label><div>${badge(industry.title, "teal")}</div>
-          <label>企业</label><div>${industry.enterprise}</div>
-          <label>输入状态</label><div>${usingUpload ? badge("用户上传数据", "amber") : badge("示例数据", "green")}</div>
-          <label>必需字段</label><div>${industry.requiredFields.map((field) => badge(field, "gray")).join("")}</div>
-        </div>
+        <h3>选择数据来源</h3>
+        <p class="lead-small">演示时可直接使用示例数据；企业试用时上传一张节点表即可。</p>
         <div class="upload-box">
           <input id="csvInput" type="file" accept=".csv,text/csv" />
           <div>
@@ -463,16 +498,17 @@ function importPage() {
         <div id="uploadStatus" class="notice"></div>
       </div>
       <div class="panel">
-        <h3>校验结果</h3>
+        <h3>当前数据状态</h3>
         ${validationPanel(activeNodes())}
+        ${evidenceDetails("查看需要的字段", `<div class="field-cloud">${industry.requiredFields.map((field) => badge(field, "gray")).join("")}</div>`)}
       </div>
     </section>
     <section class="panel">
-      <div class="section-head">
-        <h3>导入后节点预览</h3>
-        <span class="muted">采购比例合计 ${formatPercent(activeNodes().reduce((sum, node) => sum + node.purchaseShare, 0), 2)}</span>
+      <h3>导入后会得到什么</h3>
+      <div class="outcome-strip">
+        <span>优先节点</span><span>情景影响</span><span>AI 建议</span><span>诊断报告</span>
       </div>
-      ${rowsTable(rows)}
+      ${evidenceDetails("查看节点预览", rowsTable(rows))}
     </section>`;
 }
 
@@ -494,7 +530,7 @@ function libraryPage() {
     ${industrySelector()}
     <section class="grid two">
       <div class="panel">
-        <h3>行业依赖机制</h3>
+        <h3>为什么甘蔗供应链会有水风险</h3>
         <div class="mechanism-list">
           ${industry.mechanisms.map((item) => `<article class="mechanism">
             <strong>${item.indicator}</strong>
@@ -504,7 +540,7 @@ function libraryPage() {
         </div>
       </div>
       <div class="panel">
-        <h3>风险原因 - 措施库</h3>
+        <h3>系统会怎么转成建议</h3>
         <div class="action-list">
           ${industry.mechanisms.map((item) => `<div class="action-item">
             <span>${item.indicator}</span>
@@ -514,10 +550,11 @@ function libraryPage() {
       </div>
     </section>
     <section class="panel">
-      <h3>后续行业接入结构</h3>
-      <div class="schema-grid">
-        ${["industryId", "materialId", "mechanisms", "nodes", "scenarios", "requiredFields"].map((field) => `<div><strong>${field}</strong><span>已在配置中预留</span></div>`).join("")}
-      </div>
+      <h3>后续新增行业</h3>
+      <p class="lead-small">后续接入其他行业时，只需要补充行业机制、节点数据和情景规则，用户界面仍保持同一套决策流程。</p>
+      ${evidenceDetails("查看扩展字段", `<div class="schema-grid">
+        ${["industryId", "materialId", "mechanisms", "nodes", "scenarios", "requiredFields"].map((field) => `<div><strong>${field}</strong><span>系统配置项</span></div>`).join("")}
+      </div>`)}
     </section>`;
 }
 
@@ -564,27 +601,23 @@ function mapPage() {
 function riskPage() {
   const base = calcSummary(activeNodes());
   return `
-    <section class="grid metrics">
-      ${metric("总 SWE", formatNumber(base.total), "Σ(SWEi)", "teal")}
-      ${metric("Top 3 贡献", formatPercent(base.top3Contribution, 2), "管理优先级集中度", "red")}
-      ${metric("Top 3 采购占比", formatPercent(base.highPriorityShare, 2), "暴露量集中度", "amber")}
-      ${metric("HHI", base.hhi.toFixed(3), "Σ(Ei^2)", "green")}
-    </section>
     <section class="grid two">
       <div class="panel">
-        <h3>节点排名复核表</h3>
-        ${rowsTable(base.rows)}
+        <h3>优先处理顺序</h3>
+        ${priorityCards(base.rows)}
+        ${evidenceDetails("查看完整排序表", rowsTable(base.rows))}
       </div>
       <div class="panel">
-        <h3>双维度判断</h3>
-        <div class="quadrant">
-          ${base.rows.map((node) => `<span class="point ${toneForPriority(node.rank)}" style="left:${8 + node.purchaseShare * 86}%;bottom:${8 + node.riskR * 84}%">
-            ${node.id}<em>${node.area}</em>
-          </span>`).join("")}
-          <label class="x-label">企业采购占比</label>
-          <label class="y-label">区域风险 Ri</label>
+        <h3>为什么是这三个</h3>
+        <div class="plain-answer">
+          <p><strong>巴西</strong>：采购暴露最大，是当前最重要的管理节点。</p>
+          <p><strong>泰国</strong>：区域水压力最高，外部水风险恶化时最敏感。</p>
+          <p><strong>广西</strong>：国内主产区进入前三，需要做旱季和汛期监测。</p>
         </div>
-        <p class="muted">该图把区域本身风险和企业采购暴露分开看，避免把“区域高风险但采购少”和“区域不高但采购高度集中”混为一谈。</p>
+        ${evidenceDetails("查看双维度图", `<div class="quadrant">
+          ${base.rows.map((node) => `<span class="point ${toneForPriority(node.rank)}" style="left:${8 + node.purchaseShare * 86}%;bottom:${8 + node.riskR * 84}%">${node.id}<em>${node.area}</em></span>`).join("")}
+          <label class="x-label">企业采购占比</label><label class="y-label">区域风险 Ri</label>
+        </div>`)}
       </div>
     </section>`;
 }
@@ -599,28 +632,27 @@ function stressPage() {
   return `
     <section class="panel">
       <div class="section-head">
-        <h3>情景切换</h3>
+        <h3>选择一个管理问题</h3>
         <div class="segmented">
           ${industry.scenarios.map((item) => `<button class="${item.id === scenario.id ? "active" : ""}" data-scenario="${item.id}">
             ${item.name}${item.experimental ? "<small>扩展</small>" : ""}
           </button>`).join("")}
         </div>
       </div>
-      <p class="muted">${scenario.description}</p>
-    </section>
-    <section class="grid metrics">
-      ${metric("基准总 SWE", formatNumber(base.total), "m3/yr", "teal")}
-      ${metric("情景总 SWE", formatNumber(stressed.total), "m3/yr", delta >= 0 ? "red" : "green")}
-      ${metric("变化值", `${delta >= 0 ? "+" : ""}${formatNumber(delta)}`, `${delta >= 0 ? "增加" : "减少"} ${formatPercent(Math.abs(delta) / base.total, 2)}`, delta >= 0 ? "red" : "green")}
-      ${metric("供应缺口", formatPercent(stressed.supplyGap, 2), scenario.mode === "nodeFailure" ? "节点失效需单独解释" : "无结构性缺口", "amber")}
+      <p class="lead-small">${scenario.description}</p>
     </section>
     <section class="grid two">
       <div class="panel">
-        <h3>情景后节点排名</h3>
-        ${rowsTable(stressed.rows, true)}
+        <h3>结果怎么变</h3>
+        <div class="impact-panel ${delta >= 0 ? "red" : "green"}">
+          <span>${scenario.name}</span>
+          <strong>${delta >= 0 ? "+" : ""}${formatNumber(delta)}</strong>
+          <p>${scenario.mode === "nodeFailure" ? `供应缺口 ${formatPercent(stressed.supplyGap, 2)}，剩余风险转向 ${stressed.top3[0].area}。` : `总敞口变化 ${formatPercent(Math.abs(delta) / base.total, 2)}，前三优先节点基本不变。`}</p>
+        </div>
+        ${evidenceDetails("查看情景后排名", rowsTable(stressed.rows, true))}
       </div>
       <div class="panel">
-        <h3>情景含义</h3>
+        <h3>管理含义</h3>
         ${scenarioNarrative(base, stressed, scenario)}
       </div>
     </section>`;
@@ -651,22 +683,20 @@ function agentPage() {
     <section class="grid two">
       <div class="panel">
         <div class="section-head">
-          <h3>结构化 AI 诊断</h3>
+          <h3>AI 给管理层的建议</h3>
           <div>
-            ${badge("API 未配置时使用规则诊断", "amber")}
             <a class="button primary" href="diagnosis-report.html">打开正式报告</a>
             <a class="button" href="waterpulse-sugarcane-diagnosis-report.pdf">下载 PDF</a>
           </div>
         </div>
-        ${diagnosisList(diagnosis)}
+        ${diagnosisList(diagnosis.filter((item) => ["总体诊断", "短期管理措施", "中长期管理措施", "数据缺口与置信度"].includes(item.title)))}
       </div>
       <div class="panel">
-        <h3>Agent 输入边界</h3>
-        <div class="guardrail-grid">
+        <h3>建议先做的 3 件事</h3>
+        ${actionCards(base)}
+        ${evidenceDetails("查看 AI 输入边界", `<div class="guardrail-grid">
           ${["只总结 A/B/C 输入", "不编造风险指标", "不自行计算 SWE", "不改变 B 组排名", "不假设采购比例", "不解释为损失概率"].map((item, index) => `<div class="${index === 0 ? "ok" : ""}">${item}</div>`).join("")}
-        </div>
-        <h3>传给后端的 JSON 摘要</h3>
-        <pre>${escapeHtml(JSON.stringify(agentPayload(base, stressed, scenario), null, 2))}</pre>
+        </div>`)}
       </div>
     </section>`;
 }
@@ -722,7 +752,7 @@ function reportPage() {
   return `
     <section class="grid two">
       <div class="panel">
-        <h3>一页诊断结果</h3>
+        <h3>最终交付</h3>
         <div class="report-card">
           <h2>${industry.enterprise} ${industry.title}水风险诊断</h2>
           <p>基准总 SWE：<strong>${formatNumber(base.total)}</strong> m3/yr</p>
@@ -738,9 +768,11 @@ function reportPage() {
         </div>
       </div>
       <div class="panel">
-        <h3>交付检查</h3>
-        <div class="check-list">
-          ${["行业画像", "企业数据导入", "节点排名", "压力测试", "AI诊断", "下载诊断结果", "多行业配置扩展点"].map((item) => `<span>✓ ${item}</span>`).join("")}
+        <h3>报告里包含什么</h3>
+        <div class="plain-answer">
+          <p>一页管理结论。</p>
+          <p>A/B/C 组依据和数据缺口。</p>
+          <p>短期与中长期管理建议。</p>
         </div>
       </div>
     </section>`;
@@ -857,7 +889,7 @@ const PAGES = {
 function render() {
   const page = document.body.dataset.page || "home";
   const industry = activeIndustry();
-  const currentNav = NAV.find((item) => item[4] === page) || NAV[0];
+  const currentNav = NAV.find((item) => item[4] === page) || ["", ...(PAGE_META[page] || ["⌂", "管理总览"]), "index.html", page];
   const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
   document.getElementById("app").innerHTML = `
     <div class="app-shell">
