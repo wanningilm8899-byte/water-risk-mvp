@@ -872,6 +872,22 @@ function reportPage() {
     </section>`;
 }
 
+function firstNonEmpty(row, aliases, fallback = "") {
+  for (const key of aliases) {
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  return fallback;
+}
+
+function numberFromAliases(row, aliases, fallback = 0) {
+  const raw = firstNonEmpty(row, aliases, fallback);
+  const parsed = Number(String(raw).replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   const headers = lines.shift().split(",").map((item) => item.trim());
@@ -879,19 +895,19 @@ function parseCsv(text) {
     const cells = line.split(",").map((item) => item.trim());
     const row = Object.fromEntries(headers.map((header, i) => [header, cells[i] || ""]));
     return {
-      id: row["节点编号"] || `U${String(index + 1).padStart(2, "0")}`,
-      material: row["原材料"] || "甘蔗",
-      supplier: row["产区/供应商"] || row["供应商"] || "用户上传节点",
-      area: row["产区/供应商"] || row["精确位置"] || "用户上传节点",
-      preciseLocation: row["精确位置"] || row["产区/供应商"] || "待补充",
-      purchaseShare: Number(row["采购比例(E)"] || row["采购比例"] || 0),
-      waterFootprint: Number(row["水足迹W"] || row["水足迹"] || 0),
-      riskR: Number(row["BWS系数R"] || row["区域风险R"] || 0),
-      regionRisk: row["区域风险等级"] || "待定",
-      confidence: row["置信度"] || "低",
+      id: firstNonEmpty(row, ["node_id", "节点编号", "节点ID", "编号", "节点"], `U${String(index + 1).padStart(2, "0")}`),
+      material: firstNonEmpty(row, ["原材料", "material", "材料", "品类"], "甘蔗"),
+      supplier: firstNonEmpty(row, ["产区/供应商", "供应商", "供应商名称", "supplier"], "用户上传节点"),
+      area: firstNonEmpty(row, ["区域", "地区", "产区", "country", "region"], firstNonEmpty(row, ["产区/供应商", "供应商", "供应商名称", "supplier"], "用户上传节点")),
+      preciseLocation: firstNonEmpty(row, ["精确位置", "详细位置", "坐标", "经纬度", "precise_location", "location"], firstNonEmpty(row, ["产区/供应商", "供应商", "供应商名称", "supplier"], "待补充")),
+      purchaseShare: numberFromAliases(row, ["采购比例(E)", "采购比例", "采购权重", "购买占比", "purchase_share", "procurement_share", "share"]),
+      waterFootprint: numberFromAliases(row, ["水足迹W", "水足迹", "water_footprint", "W"]),
+      riskR: numberFromAliases(row, ["BWS系数R", "区域风险R", "水风险R", "风险系数", "risk_r", "risk_score", "baseline_water_stress", "Ri", "区域水风险", "水风险"]),
+      regionRisk: firstNonEmpty(row, ["区域风险等级", "区域风险", "风险等级", "region_risk"], "待定"),
+      confidence: firstNonEmpty(row, ["置信度", "confidence"], "中"),
       dataNature: "用户上传",
-      sources: row["数据来源"] || "用户上传",
-      drivers: ["长期干旱与旱季供水下降", "基准水压力"],
+      sources: firstNonEmpty(row, ["数据来源", "source", "sources"], "用户上传"),
+      drivers: ["长期干旱与旱季供水下降", "基准水压力变化"],
       map: [25 + index * 10, 45 + (index % 3) * 10],
       production: 0,
       productionYear: ""
@@ -1101,3 +1117,4 @@ function render() {
 }
 
 render();
+
