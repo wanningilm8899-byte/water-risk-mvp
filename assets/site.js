@@ -23,8 +23,8 @@ const INDUSTRY_CATALOG = {
     subtitle: "上游甘蔗与进口原糖供应链水风险筛查",
     assessmentDate: "2026-08-18",
     sourceVersion: "数据版本 v2.0",
-    method: "SWEi = Ei × Wi × Ri",
-    requiredFields: ["节点编号", "产区/供应商", "精确位置", "采购比例(E)", "水足迹W", "BWS系数R", "置信度"],
+    method: "E_k = Σ(w_i × r_i)",
+    requiredFields: ["节点编号", "产区/供应商", "精确位置", "采购比例(E)", "BWS系数R", "置信度"],
     mechanisms: [
       {
         indicator: "长期干旱与旱季供水下降",
@@ -247,13 +247,22 @@ function calcRows(nodes, scenario = null) {
       ...node,
       scenarioRiskR: node.riskR,
       scenarioFailed: node.id === scenario.failedNodeId,
+      purchaseShare: node.id === scenario.failedNodeId ? 0 : node.purchaseShare,
       scenarioNote: node.id === scenario.failedNodeId ? "节点失效" : "剩余供应"
     }));
   }
 
+  if (scenario?.mode === "nodeFailure") {
+    const remainingShare = working.reduce((sum, node) => sum + (node.scenarioFailed ? 0 : node.purchaseShare), 0);
+    working = working.map((node) => ({
+      ...node,
+      purchaseShare: node.scenarioFailed || remainingShare <= 0 ? 0 : node.purchaseShare / remainingShare
+    }));
+  }
+
   working = working.map((node) => {
-    const effectiveRisk = node.scenarioRiskR ?? node.riskR;
-    const swe = node.scenarioFailed ? 0 : node.purchaseShare * node.waterFootprint * effectiveRisk;
+    const effectiveRisk = node.scenarioFailed ? 0 : (node.scenarioRiskR ?? node.riskR);
+    const swe = node.purchaseShare * effectiveRisk;
     return { ...node, effectiveRisk, swe };
   });
 
@@ -480,8 +489,8 @@ function homePage() {
       <div class="panel">
         <h3>这个网站可以做什么</h3>
         <div class="feature-list">
-          <article><strong>录入供应链节点</strong><p>可以选择已有产区模板，也可以手动填写采购比例、水足迹、区域水风险等信息，还支持上传 CSV 文件。</p></article>
-          <article><strong>识别优先管理节点</strong><p>系统会根据采购暴露、水足迹和区域水风险，给出需要优先关注的供应节点。</p></article>
+          <article><strong>录入供应链节点</strong><p>可以选择已有产区模板，也可以手动填写采购比例、区域水风险等信息，水足迹作为补充字段保留，还支持上传 CSV 文件。</p></article>
+          <article><strong>识别优先管理节点</strong><p>系统会根据采购暴露和区域水风险，给出需要优先关注的供应节点，其他字段仅用于辅助解释。</p></article>
           <article><strong>查看情景变化</strong><p>可以切换旱季供水下降、极端干旱、供应节点失效等情景，比较风险敞口和供应缺口变化。</p></article>
           <article><strong>生成建议和报告</strong><p>根据节点风险原因生成管理建议，并提供网页报告和 PDF 下载。</p></article>
         </div>
@@ -602,7 +611,7 @@ function importPage() {
 
 function validationPanel(nodes) {
   const share = nodes.reduce((sum, node) => sum + node.purchaseShare, 0);
-  const missing = nodes.flatMap((node) => ["id", "area", "purchaseShare", "waterFootprint", "riskR"].filter((key) => node[key] === undefined || node[key] === null || node[key] === ""));
+  const missing = nodes.flatMap((node) => ["id", "area", "purchaseShare", "riskR"].filter((key) => node[key] === undefined || node[key] === null || node[key] === ""));
   return `<div class="validation-list">
     <div><strong>${nodes.length}</strong><span>节点数量</span></div>
     <div><strong>${formatPercent(share, 2)}</strong><span>采购比例合计</span></div>
@@ -753,7 +762,7 @@ function scenarioNarrative(base, stressed, scenario) {
   }
   return `<div class="callout red">
     <strong>${scenario.name}放大了既有风险结构</strong>
-    <p>总 SWE 从 ${formatNumber(base.total)} 变为 ${formatNumber(stressed.total)}。前三节点仍为 ${stressed.top3.map((node) => node.area).join("、")}，说明当前风险结构主要由采购规模、水足迹和既有区域风险共同决定。</p>
+    <p>总 SWE 从 ${formatNumber(base.total)} 变为 ${formatNumber(stressed.total)}。前三节点仍为 ${stressed.top3.map((node) => node.area).join("、")}，说明当前风险结构主要由采购规模和既有区域风险共同决定。</p>
   </div>`;
 }
 
@@ -887,7 +896,7 @@ function parseCsv(text) {
       production: 0,
       productionYear: ""
     };
-  }).filter((node) => node.purchaseShare > 0 && node.waterFootprint > 0);
+  }).filter((node) => node.purchaseShare > 0);
 }
 
 function setFieldValue(id, value) {
@@ -929,8 +938,8 @@ function addManualNode() {
   const riskR = riskMode === "custom" ? readNumberField("manualRiskCustom") : Number(riskMode || 0);
   const status = document.getElementById("manualStatus");
 
-  if (!area || purchaseInput <= 0 || waterFootprint <= 0 || riskR <= 0) {
-    if (status) status.textContent = "请至少补充产区、采购比例、水足迹和区域水风险。";
+  if (!area || purchaseInput <= 0 || riskR < 0) {
+    if (status) status.textContent = "请至少补充产区、采购比例和区域水风险。";
     return;
   }
 
@@ -944,7 +953,7 @@ function addManualNode() {
     area,
     preciseLocation: document.getElementById("manualLocation")?.value.trim() || area,
     purchaseShare: purchaseInput > 1 ? purchaseInput / 100 : purchaseInput,
-    waterFootprint,
+    waterFootprint: waterFootprint > 0 ? waterFootprint : 0,
     riskR: clamp(riskR, 0, 1),
     regionRisk: preset?.regionRisk || "待定",
     confidence: document.getElementById("manualConfidence")?.value || "中",
@@ -988,7 +997,7 @@ function attachEvents() {
       const text = await file.text();
       const nodes = parseCsv(text);
       if (nodes.length < 1) {
-        document.getElementById("uploadStatus").textContent = "未识别到有效节点，请检查采购比例、水足迹和 BWS 系数字段。";
+        document.getElementById("uploadStatus").textContent = "未识别到有效节点，请检查采购比例和 BWS 系数字段。";
         return;
       }
       const total = nodes.reduce((sum, node) => sum + node.purchaseShare, 0);

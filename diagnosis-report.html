@@ -336,14 +336,14 @@
         <span>数据版本：2026-08-17 v2.0</span>
         <span>企业：中粮糖业</span>
         <span>行业/原材料：制糖业 - 甘蔗</span>
-        <span>方法：SWEi = Ei × Wi × Ri</span>
+        <span>方法：E_k = Σ(w_i × r_i)</span>
       </div>
     </header>
 
     <main>
       <section>
         <h2>一、报告摘要</h2>
-        <p>基准情景下，中粮糖业甘蔗供应链总水风险敞口 SWE 为 <strong>172,012,401 m3/yr</strong>。管理优先级由采购比例 Ei、水足迹 Wi 和区域水风险 Ri 共同决定。</p>
+        <p>基准情景下，中粮糖业甘蔗供应链总水风险敞口 E_k 为 <strong>172,012,401 m3/yr</strong>。管理优先级由采购比例 Ei 和区域水风险 Ri 共同决定，水足迹仅作为辅助解释字段保留。</p>
         <p>当前最需要优先管理的是 <strong>巴西圣保罗/中南部</strong>，其贡献度为 <strong>77.55%</strong>。前三个节点合计贡献 <strong>97.68%</strong>，说明管理资源应优先集中在少数关键供应节点。</p>
         <div class="summary">
           <div class="metric"><span>基准总 SWE</span><strong>172,012,401</strong><span>m3/yr</span></div>
@@ -381,7 +381,7 @@
         <table class="scenario-table">
           <thead>
             <tr>
-              <th>排名</th><th>节点</th><th>产区</th><th>采购比例 Ei</th><th>Ri</th><th>水足迹 Wi</th><th>SWEi</th><th>贡献度</th><th>置信度</th>
+              <th>排名</th><th>节点</th><th>产区</th><th>采购比例 Ei</th><th>Ri</th><th>水足迹（辅助）</th><th>E_k 贡献</th><th>贡献度</th><th>置信度</th>
             </tr>
           </thead>
           <tbody>
@@ -399,12 +399,12 @@
         <h2>三、压力测试</h2>
         <table>
           <thead>
-            <tr><th>情景</th><th>参数变化</th><th>总 SWE</th><th>相对基准变化</th><th>管理含义</th></tr>
+            <tr><th>情景</th><th>参数变化</th><th>总 E_k</th><th>相对基准变化</th><th>管理含义</th></tr>
           </thead>
           <tbody>
-            <tr><td>基准情景</td><td>原始 Ri、Ei、Wi</td><td class="num">172,012,401</td><td class="num">0</td><td>识别当前管理优先节点。</td></tr>
+            <tr><td>基准情景</td><td>原始 Ei、Ri</td><td class="num">172,012,401</td><td class="num">0</td><td>识别当前管理优先节点。</td></tr>
             <tr><td>旱季供水下降</td><td>Ri × 1.2</td><td class="num">206,414,882</td><td class="num">+34,402,480</td><td>整体风险被放大，但前三节点结构基本不变。</td></tr>
-            <tr><td>极端干旱</td><td>Ri × 1.4，上限 1.0</td><td class="num">236,649,331</td><td class="num">+64,636,930</td><td>泰国 Ri 接近上限，巴西仍因采购暴露和水足迹保持第一贡献。</td></tr>
+            <tr><td>极端干旱</td><td>Ri × 1.4，上限 1.0</td><td class="num">236,649,331</td><td class="num">+64,636,930</td><td>泰国 Ri 接近上限，巴西仍因采购暴露保持第一贡献。</td></tr>
             <tr><td>巴西节点失效</td><td>N03 SWE 置 0</td><td class="num">38,623,109</td><td class="num">-133,389,292</td><td>不能解释为风险下降；同时产生 76.22% 供应缺口，剩余风险转向泰国。</td></tr>
           </tbody>
         </table>
@@ -448,7 +448,7 @@
             <ul>
               <li>海外进口原糖四国产区采购占比为当前估算口径，需用企业真实采购台账复核。</li>
               <li>BWS 数值为公开数据的流域/省级代理估算，需后续按具体蔗区坐标查询。</li>
-              <li>水足迹和产量口径来自公开数据和文献估算，后续应补充供应商级取水、灌溉和产量数据。</li>
+              <li>水足迹和产量口径来自公开数据和文献估算，仅作为辅助解释字段，后续应补充供应商级取水、灌溉和产量数据。</li>
             </ul>
           </div>
           <div class="card">
@@ -466,7 +466,7 @@
           </thead>
           <tbody>
             <tr><td>报告摘要</td><td>企业、行业、节点总量、基准 SWE</td><td>给出当前总体风险水平和第一优先节点。</td></tr>
-            <tr><td>优先节点</td><td>采购比例 Ei、水足迹 Wi、区域水风险 Ri</td><td>形成节点排序、贡献度和置信度说明。</td></tr>
+            <tr><td>优先节点</td><td>采购比例 Ei、区域水风险 Ri，水足迹为辅助字段</td><td>形成节点排序、贡献度和置信度说明。</td></tr>
             <tr><td>压力测试</td><td>情景参数、失效节点、替代假设</td><td>比较总 SWE、变化幅度和供应缺口。</td></tr>
             <tr><td>行动建议</td><td>行业机制、前三节点原因、企业管理动作</td><td>输出短期核查和中长期管理措施。</td></tr>
             <tr><td>数据说明</td><td>估算字段、缺口字段、数据版本</td><td>说明适用边界和后续更新方向。</td></tr>
