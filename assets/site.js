@@ -213,7 +213,29 @@ const state = {
 function loadUploadedNodes() {
   try {
     const raw = localStorage.getItem("waterpulse.uploadedNodes");
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const nodes = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.nodes) ? parsed.nodes : null;
+    if (!nodes || !nodes.length) return null;
+
+    const purchaseSum = nodes.reduce((sum, node) => sum + Number(node?.purchaseShare || 0), 0);
+    if (!(purchaseSum > 0)) return null;
+
+    const hasRisk = nodes.some((node) => Number(node?.riskR || 0) > 0);
+    if (!hasRisk) {
+      const rawCsv = localStorage.getItem("waterpulse.uploadedCsv");
+      if (rawCsv) {
+        const reparsed = parseCsv(rawCsv);
+        if (reparsed.length && reparsed.some((node) => Number(node?.riskR || 0) > 0)) {
+          localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(reparsed));
+          return reparsed;
+        }
+      }
+      localStorage.removeItem("waterpulse.uploadedNodes");
+      return null;
+    }
+
+    return nodes;
   } catch {
     return null;
   }
@@ -1017,9 +1039,14 @@ function attachEvents() {
         return;
       }
       const total = nodes.reduce((sum, node) => sum + node.purchaseShare, 0);
+      if (!(total > 0)) {
+        document.getElementById("uploadStatus").textContent = "未识别到有效的采购比例，请检查 CSV 列名或数值格式。";
+        return;
+      }
       const normalized = nodes.map((node) => ({ ...node, purchaseShare: node.purchaseShare / total }));
       state.uploadedNodes = normalized;
       localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
+      localStorage.setItem("waterpulse.uploadedCsv", text);
       render();
     });
   }
@@ -1036,6 +1063,7 @@ function attachEvents() {
     clearManualNodesBtn.addEventListener("click", () => {
       state.uploadedNodes = null;
       localStorage.removeItem("waterpulse.uploadedNodes");
+      localStorage.removeItem("waterpulse.uploadedCsv");
       render();
     });
   }
@@ -1044,6 +1072,7 @@ function attachEvents() {
     useSampleBtn.addEventListener("click", () => {
       state.uploadedNodes = null;
       localStorage.removeItem("waterpulse.uploadedNodes");
+      localStorage.removeItem("waterpulse.uploadedCsv");
       render();
     });
   }
