@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">AquaVista symbol</title>
+  <desc id="desc">An abstract water form with data marks and a sustainable leaf curve.</desc>
+  <defs>
+    <linearGradient id="av-water" x1="11" y1="8" x2="55" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3D9DB3"/>
+      <stop offset="0.52" stop-color="#2FA7A0"/>
+      <stop offset="1" stop-color="#153A3E"/>
+    </linearGradient>
+    <clipPath id="av-drop-clip">
+      <path d="M32 4C43.6 17.4 53.8 29.2 53.8 42.2C53.8 53.2 44.9 60 32 60C19.1 60 10.2 53.2 10.2 42.2C10.2 29.2 20.4 17.4 32 4Z"/>
+    </clipPath>
+  </defs>
+  <path fill="url(#av-water)" d="M32 4C43.6 17.4 53.8 29.2 53.8 42.2C53.8 53.2 44.9 60 32 60C19.1 60 10.2 53.2 10.2 42.2C10.2 29.2 20.4 17.4 32 4Z"/>
+  <g clip-path="url(#av-drop-clip)">
+    <path fill="none" stroke="#F5F7F4" stroke-opacity=".42" stroke-width="3.2" stroke-linecap="round" d="M18.5 42.2C25.6 37 29.1 27.8 31.2 16.9"/>
+    <path fill="none" stroke="#72B88A" stroke-width="4.4" stroke-linecap="round" d="M19.8 43.8C29.4 37.5 36.9 28.8 47.9 24.3"/>
+    <path fill="none" stroke="#F5F7F4" stroke-opacity=".88" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" d="M23.2 38.8L30.5 34L36.8 36.9L44 29.7"/>
+    <rect x="24" y="40.5" width="4.2" height="8.5" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+    <rect x="31" y="37.5" width="4.2" height="11.5" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+    <rect x="38" y="33.2" width="4.2" height="15.8" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+  </g>
+</svg>

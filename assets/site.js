@@ -13,6 +13,30 @@ const PAGE_META = {
   map: ["▱", "供应链位置"]
 };
 
+function aquaVistaSymbol(className = "logo-symbol") {
+  return `<svg class="${className}" viewBox="0 0 64 64" role="img" aria-label="AquaVista">
+    <defs>
+      <linearGradient id="avSidebarWater" x1="11" y1="8" x2="55" y2="58" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#3D9DB3"/>
+        <stop offset="0.52" stop-color="#2FA7A0"/>
+        <stop offset="1" stop-color="#153A3E"/>
+      </linearGradient>
+      <clipPath id="avSidebarClip">
+        <path d="M32 4C43.6 17.4 53.8 29.2 53.8 42.2C53.8 53.2 44.9 60 32 60C19.1 60 10.2 53.2 10.2 42.2C10.2 29.2 20.4 17.4 32 4Z"/>
+      </clipPath>
+    </defs>
+    <path class="av-water" d="M32 4C43.6 17.4 53.8 29.2 53.8 42.2C53.8 53.2 44.9 60 32 60C19.1 60 10.2 53.2 10.2 42.2C10.2 29.2 20.4 17.4 32 4Z"/>
+    <g clip-path="url(#avSidebarClip)">
+      <path class="av-stream" fill="none" stroke-opacity=".42" stroke-width="3.2" stroke-linecap="round" d="M18.5 42.2C25.6 37 29.1 27.8 31.2 16.9"/>
+      <path class="av-leaf" fill="none" stroke-width="4.4" stroke-linecap="round" d="M19.8 43.8C29.4 37.5 36.9 28.8 47.9 24.3"/>
+      <path class="av-data-line" fill="none" stroke-opacity=".88" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" d="M23.2 38.8L30.5 34L36.8 36.9L44 29.7"/>
+      <rect x="24" y="40.5" width="4.2" height="8.5" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+      <rect x="31" y="37.5" width="4.2" height="11.5" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+      <rect x="38" y="33.2" width="4.2" height="15.8" rx="1.7" fill="#F5F7F4" fill-opacity=".86"/>
+    </g>
+  </svg>`;
+}
+
 const INDUSTRY_CATALOG = {
   sugar_sugarcane: {
     industryId: "sugar",
@@ -205,14 +229,14 @@ const INDUSTRY_CATALOG = {
 
 const DEFAULT_INDUSTRY = "sugar_sugarcane";
 const state = {
-  industryKey: localStorage.getItem("waterpulse.industry") || DEFAULT_INDUSTRY,
-  scenarioId: localStorage.getItem("waterpulse.scenario") || "dry20",
+  industryKey: localStorage.getItem("aquavista.industry") || DEFAULT_INDUSTRY,
+  scenarioId: localStorage.getItem("aquavista.scenario") || "dry20",
   uploadedNodes: loadUploadedNodes()
 };
 
 function loadUploadedNodes() {
   try {
-    const raw = localStorage.getItem("waterpulse.uploadedNodes");
+    const raw = localStorage.getItem("aquavista.uploadedNodes");
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     const nodes = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.nodes) ? parsed.nodes : null;
@@ -223,16 +247,16 @@ function loadUploadedNodes() {
 
     const hasRisk = nodes.some((node) => Number(node?.riskR || 0) > 0);
     if (!hasRisk) {
-      const rawCsv = localStorage.getItem("waterpulse.uploadedCsv");
+      const rawCsv = localStorage.getItem("aquavista.uploadedCsv");
       if (rawCsv) {
         const reparsed = parseCsv(rawCsv);
         if (reparsed.length && reparsed.some((node) => Number(node?.riskR || 0) > 0)) {
           const normalized = normalizeNodes(reparsed);
-          localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
+          localStorage.setItem("aquavista.uploadedNodes", JSON.stringify(normalized));
           return normalized;
         }
       }
-      localStorage.removeItem("waterpulse.uploadedNodes");
+      localStorage.removeItem("aquavista.uploadedNodes");
       return null;
     }
 
@@ -254,8 +278,8 @@ function activeNodes() {
     const validWater = state.uploadedNodes.some((node) => Number(node.waterFootprint || 0) > 0);
     const validShare = state.uploadedNodes.some((node) => Number(node.purchaseShare || 0) > 0);
     if (validRisk && validWater && validShare) return state.uploadedNodes;
-    localStorage.removeItem("waterpulse.uploadedNodes");
-    localStorage.removeItem("waterpulse.uploadedCsv");
+    localStorage.removeItem("aquavista.uploadedNodes");
+    localStorage.removeItem("aquavista.uploadedCsv");
     state.uploadedNodes = null;
   }
   return activeIndustry().nodes;
@@ -512,42 +536,218 @@ function progress(active) {
   }).join("")}</div>`;
 }
 
+function landingLogo() {
+  return aquaVistaSymbol("av-logo-symbol");
+}
+
+function landingHeader() {
+  return `<header class="landing-header">
+    <a class="landing-brand" href="index.html" aria-label="AquaVista 首页">
+      ${landingLogo()}
+      <span><strong>AquaVista</strong><em>AI-POWERED WATER RISK INTELLIGENCE</em></span>
+    </a>
+    <nav class="landing-nav" aria-label="首页导航">
+      <a href="#product">产品</a>
+      <a href="risk-exposure.html">风险分析</a>
+      <a href="#workflow">解决方案</a>
+      <a href="#ai">关于我们</a>
+    </nav>
+    <div class="landing-actions">
+      <a class="landing-login" href="data-import.html">登录</a>
+      <a class="landing-button primary" href="data-import.html">开始分析</a>
+    </div>
+  </header>`;
+}
+
+function landingHeroVisual(base, scenario, stressed) {
+  const nodes = base.rows.slice(0, 6);
+  const nodeDots = nodes.map((node) => {
+    const [left, top] = mapPosition(node);
+    const tone = toneForPriority(node.rank);
+    const size = Math.max(9, Math.min(22, 9 + node.purchaseShare * 18));
+    return `<span class="hero-node ${tone}" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px">
+      <i>${node.id}</i>
+    </span>`;
+  }).join("");
+  const first = base.top3[0];
+  const second = base.top3[1];
+  const delta = stressed.total - base.total;
+  return `<div class="hero-visual" aria-label="供应链水风险分析演示图">
+    <div class="visual-topline">
+      <span>DEMO ANALYSIS VIEW</span>
+      <strong>SCENARIO 2030</strong>
+    </div>
+    <div class="visual-stage">
+      <svg class="visual-map" viewBox="0 0 640 420" aria-hidden="true">
+        <path d="M122 90c72-34 148-27 205 14 37 27 86 31 138 18 45-11 86-1 109 36 25 40 7 89-35 111-50 26-98-1-147 16-64 23-91 79-165 65-67-13-73-72-120-89-42-16-72-45-61-88 9-34 38-62 76-83Z" fill="none" stroke="currentColor" stroke-width="1.2" />
+        <path d="M72 302c88-52 154-53 229-18 58 27 108 28 193 0" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="6 10" />
+        <path d="M112 262C188 194 270 184 360 232c64 34 115 23 181-38" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="3 9" />
+      </svg>
+      <svg class="visual-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M24 72 C 34 42, 48 34, 58 56 S 74 70, 73 78" />
+        <path d="M38 43 C 46 40, 50 46, 58 56" />
+        <path d="M26 34 C 39 47, 47 58, 58 56" />
+      </svg>
+      ${nodeDots}
+      <div class="visual-panel risk-panel">
+        <span>WATER RISK</span>
+        <strong>Location Matched</strong>
+      </div>
+      <div class="visual-panel exposure-panel">
+        <span>SUPPLY EXPOSURE</span>
+        <strong>${first.id} · ${first.area}</strong>
+      </div>
+      <div class="visual-panel priority-panel">
+        <span>HIGH PRIORITY</span>
+        <strong>${second.id} · ${second.area}</strong>
+      </div>
+    </div>
+    <div class="visual-footer">
+      <div><span>Risk Exposure</span><strong>${formatNumber(base.total)}</strong></div>
+      <div><span>Scenario Change</span><strong>${delta >= 0 ? "+" : ""}${formatNumber(delta)}</strong></div>
+      <div><span>Top 3 Nodes</span><strong>${base.top3.map((node) => node.id).join(" / ")}</strong></div>
+    </div>
+    <p class="demo-note">Demo: 使用当前样例数据生成，仅用于展示分析结果形态。</p>
+  </div>`;
+}
+
+function analyticsPreview(base, scenario, stressed) {
+  const delta = stressed.total - base.total;
+  const rows = base.top3.map((node) => `<div class="preview-row">
+    <span>${node.id}</span>
+    <strong>${node.area}</strong>
+    <em>${formatPercent(node.contribution, 1)}</em>
+  </div>`).join("");
+  return `<div class="analytics-preview">
+    <div class="preview-toolbar">
+      <div><span>DEMO RESULT</span><strong>AquaVista Risk Analysis</strong></div>
+      <a href="risk-exposure.html">查看完整分析</a>
+    </div>
+    <div class="preview-grid">
+      <div class="preview-map">
+        <svg viewBox="0 0 440 320" aria-hidden="true">
+          <path d="M72 96c60-44 128-48 189-14 42 24 84 16 117 43 48 40 22 112-35 124-49 11-82-21-126-5-62 23-112 17-143-28-28-41-41-88-2-120Z" />
+          <path d="M82 232c82-49 149-45 219-7" />
+          <path d="M112 145c54 24 100 57 149 87" />
+        </svg>
+        ${base.rows.slice(0, 6).map((node) => {
+          const [left, top] = mapPosition(node);
+          return `<span class="preview-dot ${toneForPriority(node.rank)}" style="left:${left}%;top:${top}%">${node.id}</span>`;
+        }).join("")}
+      </div>
+      <div class="preview-side">
+        <div class="preview-metric"><span>Risk Exposure</span><strong>${formatNumber(base.total)}</strong><em>当前样例数据口径</em></div>
+        <div class="preview-metric"><span>High-Risk Procurement</span><strong>${formatPercent(base.highPriorityShare, 1)}</strong><em>前三管理优先节点采购占比</em></div>
+        <div class="preview-metric"><span>${scenario.name}</span><strong>${delta >= 0 ? "+" : ""}${formatNumber(delta)}</strong><em>假设情景下的敞口变化</em></div>
+      </div>
+    </div>
+    <div class="preview-bottom">
+      <div>
+        <span>Top Risk Nodes</span>
+        ${rows}
+      </div>
+      <div class="preview-insight">
+        <span>Key Insights</span>
+        <p>结果不是单一水风险地图，而是把采购结构、供应链位置和地点水风险连接后，识别企业真正需要管理的风险敞口。</p>
+      </div>
+    </div>
+    <p class="demo-note">Demo: 预览使用项目内当前样例节点，不代表真实企业风险承诺。</p>
+  </div>`;
+}
+
 function homePage() {
   const industry = activeIndustry();
+  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
+  const base = calcSummary(activeNodes());
+  const stressed = calcSummary(activeNodes(), scenario);
 
   return `
-    ${industrySelector()}
-    <section class="panel intro-hero">
-      <div class="kicker">WaterPulse · 供应链水风险诊断工具</div>
-      <h2>把企业原材料供应链数据，转成可阅读、可比较、可下载的水风险诊断结果。</h2>
-      <p>本网站用于帮助企业识别重点供应节点，查看不同情景下的风险变化，并生成面向管理层的建议和诊断报告。当前已接入 ${industry.enterprise}「${industry.title}」示例，后续可继续扩展其他行业。</p>
-      <div class="button-row">
-        <a class="button primary" href="data-import.html">开始导入数据</a>
-        <a class="button" href="diagnosis-report.html">查看示例报告</a>
-      </div>
-    </section>
-    <section class="grid two">
-      <div class="panel">
-        <h3>这个网站可以做什么</h3>
-        <div class="feature-list">
-          <article><strong>录入供应链节点</strong><p>可以选择已有产区模板，也可以手动填写采购比例、区域水风险等信息，水足迹作为补充字段保留，还支持上传 CSV 文件。</p></article>
-          <article><strong>识别优先管理节点</strong><p>系统会根据采购暴露和区域水风险，给出需要优先关注的供应节点，其他字段仅用于辅助解释。</p></article>
-          <article><strong>查看情景变化</strong><p>可以切换旱季供水下降、极端干旱、供应节点失效等情景，比较风险敞口和供应缺口变化。</p></article>
-          <article><strong>生成建议和报告</strong><p>根据节点风险原因生成管理建议，并提供网页报告和 PDF 下载。</p></article>
+    ${landingHeader()}
+    <main class="landing-main">
+      <section class="landing-hero" id="product">
+        <div class="hero-copy">
+          <div class="eyebrow">AI-POWERED WATER RISK INTELLIGENCE</div>
+          <h1>洞见水风险，<br>守护供应链韧性</h1>
+          <p>AquaVista 将企业关键原材料、供应链位置、采购结构与水风险数据连接起来，帮助企业识别风险敞口、比较情景变化，并形成可追溯的管理建议。</p>
+          <div class="hero-cta">
+            <a class="landing-button primary large" href="data-import.html">开始风险分析</a>
+            <a class="landing-button secondary large" href="#workflow">了解产品</a>
+          </div>
         </div>
-      </div>
-      <div class="panel">
-        <h3>建议操作顺序</h3>
-        <div class="guide-steps">
-          <a href="data-import.html"><span>1</span><strong>导入数据</strong><em>选择模板、手动填写或上传文件</em></a>
-          <a href="supply-map.html"><span>2</span><strong>查看位置</strong><em>确认节点位置与产区匹配情况</em></a>
-          <a href="risk-exposure.html"><span>3</span><strong>看优先节点</strong><em>识别最需要管理的供应节点</em></a>
-          <a href="stress-test.html"><span>4</span><strong>压力测试</strong><em>比较三类压力情景下的风险变化</em></a>
-          <a href="agent-analysis.html"><span>5</span><strong>查看 AI 建议</strong><em>获得管理措施与数据缺口提示</em></a>
-          <a href="report-export.html"><span>6</span><strong>下载报告</strong><em>输出正式诊断结果</em></a>
+        ${landingHeroVisual(base, scenario, stressed)}
+      </section>
+
+      <section class="landing-section value-section">
+        <div class="section-intro">
+          <span>Product Value</span>
+          <h2>从分散的数据，<br>到可执行的风险洞察</h2>
+          <p>连接行业、原材料、供应链位置、采购结构与地点水风险，让企业从“看见风险”进一步走向“理解风险、管理风险”。</p>
         </div>
-      </div>
-    </section>`;
+        <div class="value-grid">
+          ${[
+            ["01", "多源数据融合", "连接行业、原材料、供应链位置与水风险数据。"],
+            ["02", "供应链风险敞口", "识别高风险采购、关键贡献节点与集中度。"],
+            ["03", "情景模拟", "比较未来风险、节点中断和采购结构变化。"],
+            ["04", "AI 风险洞察", "组织数据、调用工具、解释结果并生成可追溯报告。"]
+          ].map((item) => `<article class="value-item">
+            <div class="value-index">${item[0]}</div>
+            <div class="value-symbol"><span></span></div>
+            <h3>${item[1]}</h3>
+            <p>${item[2]}</p>
+          </article>`).join("")}
+        </div>
+      </section>
+
+      <section class="landing-section workflow-section" id="workflow">
+        <div class="section-intro compact">
+          <span>Workflow</span>
+          <h2>从数据，到决策</h2>
+        </div>
+        <div class="workflow-line">
+          ${[
+            ["01", "数据输入", "导入企业供应链节点、采购结构和原材料信息。"],
+            ["02", "风险匹配", "把产地与地点水风险指标连接并保留数据来源。"],
+            ["03", "敞口计算", "基于确定性函数计算贡献度、集中度和优先级。"],
+            ["04", "情景测试", "在假设压力情景下比较结构变化。"],
+            ["05", "AI 洞察", "解释结果、提示数据缺口并组织管理建议。"],
+            ["06", "管理报告", "输出可追溯、可下载的风险诊断报告。"]
+          ].map((item) => `<article class="workflow-step">
+            <span>${item[0]}</span>
+            <strong>${item[1]}</strong>
+            <p>${item[2]}</p>
+          </article>`).join("")}
+        </div>
+      </section>
+
+      <section class="landing-section preview-section">
+        <div class="section-intro">
+          <span>Analytics Preview</span>
+          <h2>最终得到的不是地图，<br>而是一套可追溯的风险管理结果</h2>
+          <p>供应链节点、地点风险、采购权重、风险敞口和情景变化被放在同一张分析界面中，便于管理层判断下一步。</p>
+        </div>
+        ${analyticsPreview(base, scenario, stressed)}
+      </section>
+
+      <section class="landing-section ai-section" id="ai">
+        <div class="ai-copy">
+          <span>AI Intelligence</span>
+          <h2>AI 不只是回答问题，<br>而是参与整个风险分析流程。</h2>
+          <p>AI 负责组织流程、调用工具、解释结果和辅助生成报告；风险结果来自数据、规则和确定性函数，AI 不直接编造风险分数。</p>
+        </div>
+        <div class="ai-flow">
+          ${["数据检查", "工具调用", "确定性计算", "结果解释", "报告生成"].map((item, index) => `<div class="ai-step">
+            <span>${String(index + 1).padStart(2, "0")}</span>
+            <strong>${item}</strong>
+          </div>`).join("")}
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <h2>从识别风险，<br>到管理风险。</h2>
+        <p>让数据成为风险管理的起点，让 AI 帮助企业看见下一步。</p>
+        <a class="landing-button light large" href="data-import.html">开始风险分析 →</a>
+      </section>
+    </main>`;
 }
 
 function importPage() {
@@ -821,7 +1021,7 @@ function agentPage() {
           <h3>AI 给管理层的建议</h3>
           <div>
             <a class="button primary" href="diagnosis-report.html">打开正式报告</a>
-            <a class="button" href="waterpulse-sugarcane-diagnosis-report.pdf">下载 PDF</a>
+            <a class="button" href="aquavista-sugarcane-diagnosis-report.pdf">下载 PDF</a>
           </div>
         </div>
         ${diagnosisList(diagnosis.filter((item) => ["总体诊断", "短期管理措施", "中长期管理措施", "数据缺口与置信度"].includes(item.title)))}
@@ -897,7 +1097,7 @@ function reportPage() {
         </div>
         <div class="button-row">
           <a class="button primary" href="diagnosis-report.html">打开正式报告文件</a>
-          <a class="button primary" href="waterpulse-sugarcane-diagnosis-report.pdf">下载正式报告 PDF</a>
+          <a class="button primary" href="aquavista-sugarcane-diagnosis-report.pdf">下载正式报告 PDF</a>
           <a class="button" href="diagnosis-report.html" download>下载正式报告 HTML</a>
           <button class="button" onclick="window.print()">打印</button>
         </div>
@@ -1027,7 +1227,7 @@ function addManualNode() {
   else existing.push(nextNode);
 
   state.uploadedNodes = existing;
-  localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(existing));
+  localStorage.setItem("aquavista.uploadedNodes", JSON.stringify(existing));
   render();
 }
 
@@ -1035,14 +1235,14 @@ function attachEvents() {
   document.querySelectorAll("[data-industry]").forEach((button) => {
     button.addEventListener("click", () => {
       state.industryKey = button.dataset.industry;
-      localStorage.setItem("waterpulse.industry", state.industryKey);
+      localStorage.setItem("aquavista.industry", state.industryKey);
       render();
     });
   });
   document.querySelectorAll("[data-scenario]").forEach((button) => {
     button.addEventListener("click", () => {
       state.scenarioId = button.dataset.scenario;
-      localStorage.setItem("waterpulse.scenario", state.scenarioId);
+      localStorage.setItem("aquavista.scenario", state.scenarioId);
       render();
     });
   });
@@ -1064,8 +1264,8 @@ function attachEvents() {
       }
       const normalized = normalizeNodes(nodes);
       state.uploadedNodes = normalized;
-      localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
-      localStorage.setItem("waterpulse.uploadedCsv", text);
+      localStorage.setItem("aquavista.uploadedNodes", JSON.stringify(normalized));
+      localStorage.setItem("aquavista.uploadedCsv", text);
       render();
     });
   }
@@ -1081,8 +1281,8 @@ function attachEvents() {
   if (clearManualNodesBtn) {
     clearManualNodesBtn.addEventListener("click", () => {
       state.uploadedNodes = null;
-      localStorage.removeItem("waterpulse.uploadedNodes");
-      localStorage.removeItem("waterpulse.uploadedCsv");
+      localStorage.removeItem("aquavista.uploadedNodes");
+      localStorage.removeItem("aquavista.uploadedCsv");
       render();
     });
   }
@@ -1090,22 +1290,22 @@ function attachEvents() {
   if (useSampleBtn) {
     useSampleBtn.addEventListener("click", () => {
       state.uploadedNodes = null;
-      localStorage.removeItem("waterpulse.uploadedNodes");
-      localStorage.removeItem("waterpulse.uploadedCsv");
+      localStorage.removeItem("aquavista.uploadedNodes");
+      localStorage.removeItem("aquavista.uploadedCsv");
       render();
     });
   }
   const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
   if (downloadTemplateBtn) {
     downloadTemplateBtn.addEventListener("click", () => {
-      downloadFile("waterpulse_upload_template.csv", "节点编号,原材料,产区/供应商,精确位置,采购比例(E),水足迹W,BWS系数R,区域风险等级,置信度,数据来源\nN01,甘蔗,示例产区,示例位置,0.25,540000000,0.15,低,中,企业上传\n");
+      downloadFile("aquavista_upload_template.csv", "节点编号,原材料,产区/供应商,精确位置,采购比例(E),水足迹W,BWS系数R,区域风险等级,置信度,数据来源\nN01,甘蔗,示例产区,示例位置,0.25,540000000,0.15,低,中,企业上传\n");
     });
   }
   const downloadReportBtn = document.getElementById("downloadReportBtn");
   if (downloadReportBtn) {
     downloadReportBtn.addEventListener("click", () => {
       const report = document.querySelector(".report-card").outerHTML;
-      downloadFile("waterpulse_diagnosis.html", `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>WaterPulse 诊断结果</title><body>${report}</body></html>`);
+      downloadFile("aquavista_diagnosis.html", `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>AquaVista 诊断结果</title><body>${report}</body></html>`);
     });
   }
 }
@@ -1138,19 +1338,24 @@ const PAGES = {
 function render() {
   const page = document.body.dataset.page || "home";
   const industry = activeIndustry();
+  if (page === "home") {
+    document.getElementById("app").innerHTML = `<div class="landing-shell">${homePage()}</div>`;
+    attachEvents();
+    return;
+  }
   const currentNav = NAV.find((item) => item[4] === page) || ["", ...(PAGE_META[page] || ["⌂", "平台简介"]), "index.html", page];
   const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
   document.getElementById("app").innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
-        <a class="logo" href="index.html"><span class="logo-mark"></span><span><strong>WaterPulse</strong><em>AI Water Risk Agent</em></span></a>
+        <a class="logo" href="index.html">${aquaVistaSymbol()}<span><strong>AquaVista</strong><em>AI-POWERED WATER RISK INTELLIGENCE</em></span></a>
         <nav>${navHtml}</nav>
         <div class="side-note">结果用于筛查和优先级排序，不代表实际财务损失概率。</div>
       </aside>
       <main>
         <header class="topbar">
           <div>
-            <div class="crumb">WaterPulse / ${currentNav[2]}</div>
+            <div class="crumb">AquaVista / ${currentNav[2]}</div>
             <h1>${currentNav[2]}</h1>
           </div>
           <div class="header-actions">
@@ -1165,4 +1370,6 @@ function render() {
 }
 
 render();
+
+
 
