@@ -5,12 +5,12 @@ const NAV = [
   ["3", "▱", "供应链位置", "supply-map.html", "map"],
   ["4", "◌", "优先节点", "risk-exposure.html", "risk"],
   ["5", "☁", "压力测试", "stress-test.html", "stress"],
-  ["6", "☷", "AI 建议", "agent-analysis.html", "agent"],
-  ["7", "▤", "报告下载", "report-export.html", "report"]
+  ["6", "☷", "AI 诊断与报告", "agent-analysis.html", "agent"]
 ];
 
 const PAGE_META = {
-  map: ["▱", "供应链位置"]
+  map: ["▱", "供应链位置"],
+  report: ["☷", "AI 诊断与报告"]
 };
 
 function aquaVistaSymbol(className = "logo-symbol") {
@@ -844,7 +844,7 @@ function importPage() {
     <section class="panel">
       <h3>导入后会得到什么</h3>
       <div class="outcome-strip">
-        <span>优先节点</span><span>压力测试</span><span>AI 建议</span><span>诊断报告</span>
+        <span>优先节点</span><span>压力测试</span><span>AI 诊断</span><span>诊断报告</span>
       </div>
       ${evidenceDetails("查看节点预览", rowsTable(rows))}
     </section>`;
@@ -1012,26 +1012,83 @@ function agentPage() {
   const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
   const base = calcSummary(activeNodes());
   const stressed = calcSummary(activeNodes(), scenario);
-  const diagnosis = buildDiagnosis(base, stressed, scenario);
+  const first = base.top3[0];
+  const second = base.top3[1];
+  const third = base.top3[2];
+  const delta = stressed.total - base.total;
 
   return `
-    <section class="grid two">
-      <div class="panel">
-        <div class="section-head">
-          <h3>AI 给管理层的建议</h3>
-          <div>
-            <a class="button primary" href="diagnosis-report.html">打开正式报告</a>
-            <a class="button" href="aquavista-sugarcane-diagnosis-report.pdf">下载 PDF</a>
-          </div>
+    <section class="ai-workbench">
+      <div class="ai-hero-panel">
+        <div>
+          <div class="kicker">AI DIAGNOSIS COPILOT</div>
+          <h2>面向供应链水风险的 AI 诊断工作台</h2>
+          <p>用户可以围绕关键原材料、供应链节点、风险敞口、压力情景和管理建议提出问题。AI 接入后将在这里读取当前分析上下文，并返回面向管理决策的诊断回答。</p>
         </div>
-        ${diagnosisList(diagnosis.filter((item) => ["总体诊断", "短期管理措施", "中长期管理措施", "数据缺口与置信度"].includes(item.title)))}
+        <div class="ai-status-stack">
+          <span>数据上下文已加载</span>
+          <span>当前分析结果已同步</span>
+          <span>报告出口已就绪</span>
+        </div>
       </div>
-      <div class="panel">
-        <h3>建议先做的 3 件事</h3>
-        ${actionCards(base)}
-        ${evidenceDetails("查看诊断原则", `<div class="guardrail-grid">
-          ${["只基于已导入数据", "不编造风险指标", "不自行改写计算结果", "不改变节点优先级", "不假设采购比例", "不解释为损失概率"].map((item, index) => `<div class="${index === 0 ? "ok" : ""}">${item}</div>`).join("")}
-        </div>`)}
+
+      <div class="ai-console-layout">
+        <div class="ai-chat-panel">
+          <div class="chat-head">
+            <div>
+              <span>Conversation</span>
+              <strong>AquaVista AI 诊断窗口</strong>
+            </div>
+            <em>待接入企业 AI 服务</em>
+          </div>
+          <div class="chat-body">
+            <div class="chat-message assistant">
+              <span>AI</span>
+              <p>我已准备读取当前项目的供应链节点、采购结构、地点水风险、敞口计算和压力测试结果。你可以询问“为什么某个节点优先级更高”、“情景变化意味着什么”或“报告中应如何解释数据缺口”。</p>
+            </div>
+            <div class="chat-prompt-grid">
+              ${[
+                "哪些供应链节点对风险敞口贡献最高？",
+                `${scenario.name}下风险结构发生了什么变化？`,
+                "报告里应该如何说明数据置信度？",
+                "下一步管理动作应该优先从哪里开始？"
+              ].map((item) => `<button type="button">${item}</button>`).join("")}
+            </div>
+          </div>
+          <div class="chat-composer">
+            <textarea rows="3" placeholder="输入你想了解的问题，例如：为什么巴西节点是第一优先管理节点？"></textarea>
+            <button type="button" class="button primary">发送</button>
+          </div>
+          <p class="chat-note">当前为前端对话窗口位置预留；接入 AI 后，用户问题将在此提交并由网站 AI 返回回答。</p>
+        </div>
+
+        <aside class="ai-side-panel">
+          <div class="context-card dark">
+            <span>Current Context</span>
+            <strong>${industry.enterprise} · ${industry.title}</strong>
+            <p>当前界面使用项目内节点数据作为 AI 诊断上下文，Demo 或用户上传数据会进入同一分析流程。</p>
+          </div>
+          <div class="report-download-card">
+            <span>Report Delivery</span>
+            <h3>报告交付</h3>
+            <p>报告作为 AI 诊断界面的交付出口保留，不再单独占用一个页面入口。</p>
+            <div class="report-actions">
+              <a class="button primary" href="aquavista-sugarcane-diagnosis-report.pdf">下载 PDF</a>
+              <a class="button" href="diagnosis-report.html" download>下载 HTML</a>
+              <a class="button" href="diagnosis-report.html">打开报告</a>
+            </div>
+          </div>
+          <div class="context-card">
+            <span>Risk Exposure</span>
+            <strong>${formatNumber(base.total)}</strong>
+            <p>前三优先节点：${[first, second, third].filter(Boolean).map((node) => node.id).join(" / ")}</p>
+          </div>
+          <div class="context-card">
+            <span>Scenario Change</span>
+            <strong>${delta >= 0 ? "+" : ""}${formatNumber(delta)}</strong>
+            <p>${scenario.name}下的风险敞口变化已同步到当前诊断上下文。</p>
+          </div>
+        </aside>
       </div>
     </section>`;
 }
@@ -1080,37 +1137,7 @@ function agentPayload(base, stressed, scenario) {
 }
 
 function reportPage() {
-  const industry = activeIndustry();
-  const scenario = industry.scenarios.find((item) => item.id === state.scenarioId) || industry.scenarios[0];
-  const base = calcSummary(activeNodes());
-  const stressed = calcSummary(activeNodes(), scenario);
-  return `
-    <section class="grid two">
-      <div class="panel">
-        <h3>最终交付</h3>
-        <div class="report-card">
-          <h2>${industry.enterprise} ${industry.title}水风险诊断</h2>
-          <p>基准总 SWE：<strong>${formatNumber(base.total)}</strong> m3/yr</p>
-          <p>前三节点：${base.top3.map((node) => `${node.id} ${node.area} ${formatPercent(node.contribution, 2)}`).join("；")}</p>
-          <p>当前情景：${scenario.name}，情景总 SWE ${formatNumber(stressed.total)} m3/yr。</p>
-          <p>数据缺口：进口拆分比例、蔗区坐标、供应商灌溉水源。</p>
-        </div>
-        <div class="button-row">
-          <a class="button primary" href="diagnosis-report.html">打开正式报告文件</a>
-          <a class="button primary" href="aquavista-sugarcane-diagnosis-report.pdf">下载正式报告 PDF</a>
-          <a class="button" href="diagnosis-report.html" download>下载正式报告 HTML</a>
-          <button class="button" onclick="window.print()">打印</button>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>报告里包含什么</h3>
-        <div class="plain-answer">
-          <p>一页管理结论。</p>
-          <p>优先节点、压力测试结果和数据缺口。</p>
-          <p>短期与中长期管理建议。</p>
-        </div>
-      </div>
-    </section>`;
+  return agentPage();
 }
 
 function firstNonEmpty(row, aliases, fallback = "") {
@@ -1344,7 +1371,8 @@ function render() {
     return;
   }
   const currentNav = NAV.find((item) => item[4] === page) || ["", ...(PAGE_META[page] || ["⌂", "平台简介"]), "index.html", page];
-  const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === page ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
+  const activePage = page === "report" ? "agent" : page;
+  const navHtml = NAV.map((item) => `<a class="nav-item ${item[4] === activePage ? "active" : ""}" href="${item[3]}"><span>${item[1]}</span><strong>${item[2]}</strong></a>`).join("");
   document.getElementById("app").innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
