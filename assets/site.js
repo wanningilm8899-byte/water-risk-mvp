@@ -227,8 +227,9 @@ function loadUploadedNodes() {
       if (rawCsv) {
         const reparsed = parseCsv(rawCsv);
         if (reparsed.length && reparsed.some((node) => Number(node?.riskR || 0) > 0)) {
-          localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(reparsed));
-          return reparsed;
+          const normalized = normalizeNodes(reparsed);
+          localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
+          return normalized;
         }
       }
       localStorage.removeItem("waterpulse.uploadedNodes");
@@ -248,7 +249,25 @@ function activeIndustry() {
 }
 
 function activeNodes() {
-  return state.uploadedNodes && state.uploadedNodes.length ? state.uploadedNodes : activeIndustry().nodes;
+  if (state.uploadedNodes && state.uploadedNodes.length) {
+    const validRisk = state.uploadedNodes.some((node) => Number(node.riskR || 0) > 0);
+    const validWater = state.uploadedNodes.some((node) => Number(node.waterFootprint || 0) > 0);
+    const validShare = state.uploadedNodes.some((node) => Number(node.purchaseShare || 0) > 0);
+    if (validRisk && validWater && validShare) return state.uploadedNodes;
+    localStorage.removeItem("waterpulse.uploadedNodes");
+    localStorage.removeItem("waterpulse.uploadedCsv");
+    state.uploadedNodes = null;
+  }
+  return activeIndustry().nodes;
+}
+
+function normalizeNodes(nodes) {
+  const total = nodes.reduce((sum, node) => sum + Number(node.purchaseShare || 0), 0);
+  if (!(total > 0)) return [];
+  return nodes.map((node) => ({
+    ...node,
+    purchaseShare: Number(node.purchaseShare || 0) / total
+  }));
 }
 
 function clamp(value, min = 0, max = 1) {
@@ -275,16 +294,16 @@ function calcRows(nodes, scenario = null) {
   }
 
   if (scenario?.mode === "nodeFailure") {
-    const remainingShare = working.reduce((sum, node) => sum + (node.scenarioFailed ? 0 : node.purchaseShare), 0);
     working = working.map((node) => ({
       ...node,
-      purchaseShare: node.scenarioFailed || remainingShare <= 0 ? 0 : node.purchaseShare / remainingShare
+      purchaseShare: node.scenarioFailed ? 0 : node.purchaseShare
     }));
   }
 
   working = working.map((node) => {
     const effectiveRisk = node.scenarioFailed ? 0 : (node.scenarioRiskR ?? node.riskR);
-    const swe = node.purchaseShare * effectiveRisk;
+    const waterFootprint = Number(node.waterFootprint || 0);
+    const swe = node.purchaseShare * waterFootprint * effectiveRisk;
     return { ...node, effectiveRisk, swe };
   });
 
@@ -297,7 +316,7 @@ function calcRows(nodes, scenario = null) {
       ...node,
       contribution: total > 0 ? node.swe / total : 0,
       rank: rankMap.get(node.id),
-      priority: priorityLabel(rankMap.get(node.id), node.contribution)
+      priority: priorityLabel(rankMap.get(node.id))
     }))
     .sort((a, b) => a.rank - b.rank);
 }
@@ -1043,7 +1062,7 @@ function attachEvents() {
         document.getElementById("uploadStatus").textContent = "未识别到有效的采购比例，请检查 CSV 列名或数值格式。";
         return;
       }
-      const normalized = nodes.map((node) => ({ ...node, purchaseShare: node.purchaseShare / total }));
+      const normalized = normalizeNodes(nodes);
       state.uploadedNodes = normalized;
       localStorage.setItem("waterpulse.uploadedNodes", JSON.stringify(normalized));
       localStorage.setItem("waterpulse.uploadedCsv", text);
